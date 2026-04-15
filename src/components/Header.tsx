@@ -93,10 +93,12 @@ export default function Header() {
       {/* Main Header */}
       <div className="bg-card border-b">
         <div className="max-w-7xl mx-auto px-4">
-          <div className="flex items-center gap-3 md:gap-4 py-3">
+          <div className="flex flex-wrap items-center gap-3 md:gap-4 py-3">
             {/* Mobile Menu Toggle */}
             <button
-              className="md:hidden flex-shrink-0 p-1 text-foreground hover:text-primary"
+              type="button"
+              aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
+              className="md:hidden flex-shrink-0 p-2 text-foreground hover:text-primary"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             >
               {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
@@ -113,7 +115,7 @@ export default function Header() {
             </Link>
 
             {/* Search Bar */}
-            <form onSubmit={handleSearch} className="flex-1 max-w-xl lg:max-w-2xl">
+            <form onSubmit={handleSearch} className="flex-1 min-w-0 w-full md:w-auto max-w-full lg:max-w-2xl">
               <div className="flex w-full border-2 border-primary rounded-lg overflow-hidden">
                 {/* Category Dropdown */}
                 <div ref={dropdownRef} className="relative hidden lg:block">
@@ -163,7 +165,7 @@ export default function Header() {
             </form>
 
             {/* Actions */}
-            <div className="flex items-center gap-1 md:gap-3 ml-auto">
+            <div className="flex flex-1 flex-wrap items-center justify-end gap-1 md:gap-3 ml-auto">
               {/* Theme Toggle */}
               <div className="flex items-center">
                 <ThemeToggle />
@@ -278,7 +280,7 @@ export default function Header() {
       {mobileMenuOpen && (
         <div className="fixed inset-0 z-50 md:hidden">
           <div className="fixed inset-0 bg-black/50" onClick={() => setMobileMenuOpen(false)} />
-          <div className="fixed inset-y-0 left-0 w-72 bg-card shadow-xl overflow-y-auto">
+          <div className="fixed inset-y-0 left-0 w-full max-w-xs bg-card shadow-xl overflow-y-auto">
             <div className="p-4 bg-dark text-white">
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center">
