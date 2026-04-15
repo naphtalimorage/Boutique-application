@@ -9,7 +9,12 @@
     "start": "node dist/index.js",
     "migrate": "ts-node src/database/migrate.ts"
   },
-  "keywords": ["boutique", "inventory", "sales", "api"],
+  "keywords": [
+    "boutique",
+    "inventory",
+    "sales",
+    "api"
+  ],
   "author": "",
   "license": "ISC",
   "dependencies": {
