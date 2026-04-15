@@ -5,12 +5,12 @@ import morgan from 'morgan';
 import dotenv from 'dotenv';
 import rateLimit from 'express-rate-limit';
 
-import { errorHandler, notFound } from './middleware/error';
-import authRoutes from './routes/auth.routes';
-import productRoutes from './routes/product.routes';
-import categoryRoutes from './routes/category.routes';
-import salesRoutes from './routes/sales.routes';
-import mpesaRoutes from './routes/mpesa.routes';
+import { errorHandler, notFound } from './middleware/error.js';
+import authRoutes from './routes/auth.routes.js';
+import productRoutes from './routes/product.routes.js';
+import categoryRoutes from './routes/category.routes.js';
+import salesRoutes from './routes/sales.routes.js';
+import mpesaRoutes from './routes/mpesa.routes.js';
 
 dotenv.config();
 
