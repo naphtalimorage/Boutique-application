@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
-import { saleService } from '../services/sale.service';
-import { createSaleSchema } from '../validations';
+import { saleService } from '../services/sale.service.js';
+import { createSaleSchema } from '../validations/index.js';
 
 interface AuthenticatedRequest extends Request {
   user?: {

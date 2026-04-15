@@ -1,6 +1,6 @@
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
-import { supabase } from '../database/supabase';
+import { supabase } from '../database/supabase.js';
 
 export interface CreateUserInput {
   name: string;

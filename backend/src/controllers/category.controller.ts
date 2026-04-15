@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
-import { categoryService } from '../services/category.service';
-import { createCategorySchema } from '../validations';
+import { categoryService } from '../services/category.service.js';
+import { createCategorySchema } from '../validations/index.js';
 
 export class CategoryController {
   async getAll(req: Request, res: Response, next: NextFunction) {

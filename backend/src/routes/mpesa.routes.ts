@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import { mpesaController } from '../controllers/mpesa.controller';
-import { authenticate } from '../middleware/auth';
+import { mpesaController } from '../controllers/mpesa.controller.js';
+import { authenticate } from '../middleware/auth.js';
 
 const router = Router();
 

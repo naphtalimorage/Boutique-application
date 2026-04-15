@@ -1,5 +1,5 @@
-import { supabase } from '../database/supabase';
-import { emailService } from './email.service';
+import { supabase } from '../database/supabase.js';
+import { emailService } from './email.service.js';
 
 interface ProductVariationColor {
   name: string;

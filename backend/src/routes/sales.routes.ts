@@ -1,8 +1,8 @@
 import { Router } from 'express';
-import { saleController } from '../controllers/sale.controller';
-import { authenticate, authorize } from '../middleware/auth';
-import { validate } from '../middleware/validation';
-import { createSaleSchema } from '../validations';
+import { saleController } from '../controllers/sale.controller.js';
+import { authenticate, authorize } from '../middleware/auth.js';
+import { validate } from '../middleware/validation.js';
+import { createSaleSchema } from '../validations/index.js';
 
 const router = Router();
 

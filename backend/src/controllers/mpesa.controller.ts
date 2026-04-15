@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
-import { darajaService } from '../services/daraja.service';
-import { supabase } from '../database/supabase';
+import { darajaService } from '../services/daraja.service.js';
+import { supabase } from '../database/supabase.js';
 
 interface MpesaProductVariationColor {
   name: string;

@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import multer from 'multer';
-import { productService } from '../services/product.service';
-import { createProductSchema, updateProductSchema } from '../validations';
+import { productService } from '../services/product.service.js';
+import { createProductSchema, updateProductSchema } from '../validations/index.js';
 
 // Configure multer for memory storage
 const upload = multer({

@@ -1,4 +1,4 @@
-import { supabase } from '../database/supabase';
+import { supabase } from '../database/supabase.js';
 import path from 'path';
 
 interface ProductVariationColor {
