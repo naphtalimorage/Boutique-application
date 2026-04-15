@@ -40,7 +40,7 @@ export default function MpesaPaymentDialog({
   const [countdown, setCountdown] = useState(120);
   const [localPhone, setLocalPhone] = useState(phoneNumber);
 
-  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+  const API_URL = import.meta.env.VITE_API_URL || 'https://boutique-application.onrender.com/api';
 
   // Get auth token
   const getToken = () => {
