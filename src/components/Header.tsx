@@ -28,9 +28,11 @@ export default function Header() {
   const [searchTerm, setSearchTerm] = useState('');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [categoryDropdownOpen, setCategoryDropdownOpen] = useState(false);
+  const [accountDropdownOpen, setAccountDropdownOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('');
   const [scrolled, setScrolled] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const accountDropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     categoriesAPI.getAll().then(setCategories).catch(() => {});
@@ -47,6 +49,9 @@ export default function Header() {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setCategoryDropdownOpen(false);
+      }
+      if (accountDropdownRef.current && !accountDropdownRef.current.contains(event.target as Node)) {
+        setAccountDropdownOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -172,18 +177,20 @@ export default function Header() {
               </div>
 
               {/* Account - Click on mobile, hover on desktop */}
-              <div className="relative group">
-                <button 
+              <div ref={accountDropdownRef} className="relative group">
+                <button
+                  type="button"
+                  aria-label="Open account menu"
                   className="flex items-center gap-1 text-foreground hover:text-primary transition-colors p-2 min-h-[44px] min-w-[44px]"
-                  onClick={() => {}}  // Click handled by hover on desktop, always accessible on mobile
+                  onClick={() => setAccountDropdownOpen((prev) => !prev)}
                 >
                   <User className="h-5 w-5" />
                   <span className="hidden md:inline text-sm font-medium">
                     {isAuthenticated ? user?.name?.split(' ')[0] || 'Account' : 'Account'}
                   </span>
                 </button>
-                {/* Mobile: Always visible dropdown, Desktop: Hover */}
-                <div className="absolute right-0 top-full mt-2 w-48 bg-card border border-border rounded-lg shadow-xl py-1 md:opacity-0 md:invisible md:group-hover:opacity-100 md:group-hover:visible transition-all duration-200 z-50 opacity-100 visible md:hidden">
+                {/* Mobile: tap to open, Desktop: hover to open */}
+                <div className={`absolute right-0 top-full mt-2 w-48 bg-card border border-border rounded-lg shadow-xl py-1 transition-all duration-200 z-50 ${accountDropdownOpen ? 'opacity-100 visible' : 'opacity-0 invisible'} md:group-hover:opacity-100 md:group-hover:visible md:opacity-0 md:invisible md:w-56`}>
                   {isAuthenticated ? (
                     <>
                       <Link to="/dashboard" className="flex items-center gap-2 px-4 py-3 text-sm hover:bg-muted transition-colors min-h-[44px]">
