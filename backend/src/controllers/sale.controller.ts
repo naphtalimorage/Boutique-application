@@ -124,12 +124,12 @@ export class SaleController {
       ];
 
       for (const sale of sales) {
-        const date = new Date(sale.created_at).toLocaleString();
+        const date = new Date(sale.created_at as string).toLocaleString();
         const paymentMethod = sale.payment_method === 'mobile_money' ? 'Mobile Money' : 'Cash';
-        const status = sale.status.charAt(0).toUpperCase() + sale.status.slice(1);
+        const status = (sale.status as string).charAt(0).toUpperCase() + (sale.status as string).slice(1);
         const totalAmount = Number(sale.total_amount).toFixed(2);
 
-        if (sale.sale_items && sale.sale_items.length > 0) {
+        if (sale.sale_items && Array.isArray(sale.sale_items) && sale.sale_items.length > 0) {
           for (const item of sale.sale_items) {
             const productName = item.products?.name || 'Unknown';
             const category = item.products?.categories?.name || 'Uncategorized';

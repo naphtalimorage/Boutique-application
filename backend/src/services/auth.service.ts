@@ -100,7 +100,7 @@ class AuthService {
   private generateToken(user: { id: string; email: string; role: string }): string {
     const secret = process.env.JWT_SECRET || 'secret';
     const expiresIn = process.env.JWT_EXPIRES_IN || '7d';
-    
+
     return jwt.sign(
       {
         id: user.id,
@@ -108,7 +108,7 @@ class AuthService {
         role: user.role,
       },
       secret,
-      { expiresIn: expiresIn as string | number }
+      { expiresIn } as jwt.SignOptions
     );
   }
 }

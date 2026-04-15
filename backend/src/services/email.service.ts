@@ -127,8 +127,8 @@ class EmailService {
 
       if (error instanceof Error) {
         console.error(`   Error: ${error.message}`);
-        console.error(`   Code: ${(error as Record<string, unknown>).code}`);
-        console.error(`   Response: ${(error as Record<string, unknown>).response}`);
+        console.error(`   Code: ${(error as any).code}`);
+        console.error(`   Response: ${(error as any).response}`);
       } else {
         console.error(`   Error: ${String(error)}`);
       }

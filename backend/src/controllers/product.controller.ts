@@ -97,7 +97,7 @@ export class ProductController {
         if (req.file) {
           // Delete old image if it exists
           const existingProduct = await productService.getById(req.params.id as string);
-          if (existingProduct.image_url) {
+          if (existingProduct.image_url && typeof existingProduct.image_url === 'string') {
             await productService.deleteImage(existingProduct.image_url);
           }
 

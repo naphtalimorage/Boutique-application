@@ -1,15 +1,37 @@
 services:
-  - type: web_service
+  - type: web
     name: boutique-backend
     env: node
-    plan: starter
-    branch: main
-    root: backend
-    buildCommand: npm install && npm run build
+    region: oregon
+    buildCommand: npm install
     startCommand: npm start
-    # Add Render environment variables in the dashboard or update this file with real values.
-    # Recommended env vars:
-    # - DATABASE_URL or SUPABASE_URL
-    # - SUPABASE_KEY
-    # - JWT_SECRET
-    # - CORS_ORIGINS
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+        sync: false
+      - key: JWT_EXPIRES_IN
+        value: 7d
+      - key: CORS_ORIGINS
+        sync: false
+      - key: MPESA_CONSUMER_KEY
+        sync: false
+      - key: MPESA_CONSUMER_SECRET
+        sync: false
+      - key: MPESA_SHORTCODE
+        sync: false
+      - key: MPESA_PASSKEY
+        sync: false
+      - key: MPESA_ENVIRONMENT
+        value: sandbox
+      - key: EMAIL_USER
+        sync: false
+      - key: EMAIL_PASS
+        sync: false
