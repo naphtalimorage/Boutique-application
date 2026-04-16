@@ -29,20 +29,16 @@ export default function HomePage() {
   }, [searchParams]);
 
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchProducts = async () => {
       try {
         setError(null);
         setLoading(true);
         console.log('📦 Fetching products...');
-        const [productsData, categoriesData] = await Promise.all([
-          productsAPI.getAll(searchTerm, selectedCategory),
-          categoriesAPI.getAll(),
-        ]);
+        const productsData = await productsAPI.getAll(searchTerm, selectedCategory);
         console.log(`✅ Loaded ${productsData?.length || 0} products`);
         setProducts(productsData || []);
-        setCategories(categoriesData || []);
       } catch (error) {
-        console.error('❌ Failed to fetch data:', error);
+        console.error('❌ Failed to fetch products:', error);
         setError('Failed to load products. Please check your connection and try again.');
         setProducts([]);
       } finally {
@@ -50,9 +46,13 @@ export default function HomePage() {
       }
     };
 
-    const timeoutId = setTimeout(fetchData, 300);
+    const timeoutId = setTimeout(fetchProducts, 300);
     return () => clearTimeout(timeoutId);
   }, [searchTerm, selectedCategory]);
+
+  useEffect(() => {
+    categoriesAPI.getAll().then(setCategories).catch(() => {});
+  }, []);
 
   const handleRetry = () => {
     setLoading(true);

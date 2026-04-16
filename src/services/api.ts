@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios, { type AxiosError, type AxiosRequestConfig } from 'axios';
 import { getSupabaseClient } from '@/lib/supabase';
 import type {
   User,
@@ -36,19 +36,66 @@ api.interceptors.request.use((config) => {
 // Handle 401 responses (Token expired or invalid)
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      // Clear all session data
+  async (error) => {
+    const config = error.config as AxiosRequestConfig & { _retryCount?: number };
+    const status = error.response?.status;
+
+    if (status === 401) {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       localStorage.removeItem('userPassword');
-      
-      // Redirect to login
       window.location.href = '/login';
+      return Promise.reject(error);
     }
-    return Promise.reject(error);
+
+    const shouldRetry = status === 429 || status === 503 || status === 504;
+    if (!shouldRetry || !config) {
+      return Promise.reject(error);
+    }
+
+    config._retryCount = config._retryCount || 0;
+    if (config._retryCount >= 3) {
+      return Promise.reject(error);
+    }
+
+    config._retryCount += 1;
+    const backoffMs = 500 * 2 ** (config._retryCount - 1);
+    await new Promise((resolve) => setTimeout(resolve, backoffMs));
+    return api.request(config);
   }
 );
+
+const requestCache = new Map<string, Promise<unknown>>();
+
+const createCacheKey = (config: AxiosRequestConfig) => {
+  const method = (config.method || 'get').toString().toUpperCase();
+  const url = `${config.baseURL || ''}${config.url || ''}`;
+  const params = config.params ? JSON.stringify(config.params) : '';
+  const data = config.data ? JSON.stringify(config.data) : '';
+  return `${method}:${url}:${params}:${data}`;
+};
+
+const requestWithCache = async <T>(config: AxiosRequestConfig): Promise<T> => {
+  const cachedKey = createCacheKey(config);
+  if (config.method?.toLowerCase() === 'get') {
+    const cached = requestCache.get(cachedKey) as Promise<T> | undefined;
+    if (cached) {
+      return cached;
+    }
+
+    const promise = api.request<T>(config).then((response) => response.data).finally(() => {
+      requestCache.delete(cachedKey);
+    });
+
+    requestCache.set(cachedKey, promise);
+    return promise;
+  }
+
+  const response = await api.request<T>(config);
+  return response.data;
+};
+
+const getWithCache = <T>(url: string, config?: AxiosRequestConfig) => requestWithCache<T>({ method: 'get', url, ...config });
 
 // Auth API
 export const authAPI = {
@@ -72,12 +119,10 @@ export const productsAPI = {
     const params = new URLSearchParams();
     if (search) params.append('search', search);
     if (categoryId) params.append('categoryId', categoryId);
-    const response = await api.get(`/products?${params.toString()}`);
-    return response.data;
+    return getWithCache<Product[]>(`/products?${params.toString()}`);
   },
   getById: async (id: string): Promise<Product> => {
-    const response = await api.get(`/products/${id}`);
-    return response.data;
+    return getWithCache<Product>(`/products/${id}`);
   },
   /**
    * Upload image directly to Supabase Storage, then create product with the image URL
@@ -138,8 +183,7 @@ export const productsAPI = {
 // Categories API
 export const categoriesAPI = {
   getAll: async (): Promise<Category[]> => {
-    const response = await api.get('/categories');
-    return response.data;
+    return getWithCache<Category[]>('/categories');
   },
   create: async (name: string): Promise<Category> => {
     const response = await api.post('/categories', { name });
@@ -165,20 +209,18 @@ export const salesAPI = {
     const params = new URLSearchParams();
     if (startDate) params.append('startDate', startDate);
     if (endDate) params.append('endDate', endDate);
-    const response = await api.get(`/sales?${params.toString()}`);
-    return response.data;
+    return getWithCache<Sale[]>(`/sales?${params.toString()}`);
   },
   exportCSV: async (): Promise<string> => {
-    const response = await api.get('/sales/export/csv', { responseType: 'blob' });
-    return URL.createObjectURL(response.data);
+    const response = await getWithCache<Blob>('/sales/export/csv', { responseType: 'blob' });
+    return URL.createObjectURL(response);
   },
 };
 
 // Dashboard API
 export const dashboardAPI = {
   getStats: async (): Promise<DashboardStats> => {
-    const response = await api.get('/sales/dashboard/stats');
-    return response.data;
+    return getWithCache<DashboardStats>('/sales/dashboard/stats');
   },
 };
 
