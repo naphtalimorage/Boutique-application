@@ -178,10 +178,11 @@ export default function MpesaPaymentDialog({
       } else {
         throw new Error(data.message || 'Failed to initiate payment');
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Failed to initiate payment';
       setStep('error');
-      setErrorMessage(err.message || 'Failed to initiate payment');
-      onError(err.message);
+      setErrorMessage(message);
+      onError(message);
     } finally {
       setLoading(false);
     }

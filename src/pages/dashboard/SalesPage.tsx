@@ -68,7 +68,7 @@ export default function SalesPage() {
       ]);
       setSales(salesData);
       setProducts(productsData);
-    } catch (err) {
+    } catch {
       showError('Failed to fetch data');
     } finally {
       setLoading(false);
@@ -227,8 +227,9 @@ export default function SalesPage() {
       clearCart();
       // Refresh both sales and products to show updated stock
       fetchData();
-    } catch (err: any) {
-      showError(err.response?.data?.error || err.message || 'Failed to record sale');
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Failed to record sale';
+      showError(message);
     } finally {
       setSubmitting(false);
     }
@@ -243,7 +244,7 @@ export default function SalesPage() {
       a.click();
       URL.revokeObjectURL(url);
       success('Report exported successfully');
-    } catch (err) {
+    } catch {
       showError('Failed to export report');
     }
   };

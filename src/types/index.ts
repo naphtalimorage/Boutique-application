@@ -95,7 +95,14 @@ export interface CreateProductRequest {
   variations?: SizeVariation[];
 }
 
-export interface UpdateProductRequest extends Partial<CreateProductRequest> {}
+export interface UpdateProductRequest extends Partial<CreateProductRequest> {
+  name?: string;
+  categoryId?: string;
+  price?: number;
+  stock?: number;
+  imageUrl?: string;
+  variations?: SizeVariation[];
+}
 
 export interface CreateSaleRequest {
   productId: string;

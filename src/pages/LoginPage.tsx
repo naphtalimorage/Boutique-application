@@ -23,8 +23,9 @@ export default function LoginPage() {
     try {
       await login(email, password);
       navigate('/dashboard');
-    } catch (err: any) {
-      showError(err.response?.data?.error || err.message || 'Login failed');
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Login failed';
+      showError(message);
     } finally {
       setLoading(false);
     }

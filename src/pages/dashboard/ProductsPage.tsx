@@ -59,7 +59,7 @@ export default function ProductsPage() {
       ]);
       setProducts(productsData);
       setCategories(categoriesData);
-    } catch (err) {
+    } catch {
       showError('Failed to fetch data');
     } finally {
       setLoading(false);
@@ -185,9 +185,9 @@ export default function ProductsPage() {
       setExpandedSizes(new Set());
 
       success('Product saved! Refresh the shop page to see it.');
-    } catch (err: any) {
-      const errorMsg = err.response?.data?.error || err.message || 'Failed to save product';
-      showError(errorMsg);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Failed to save product';
+      showError(message);
     } finally {
       setSubmitting(false);
     }
@@ -200,7 +200,7 @@ export default function ProductsPage() {
       await productsAPI.delete(id);
       success('Product deleted successfully');
       setProducts(products.filter((p) => p.id !== id));
-    } catch (err: any) {
+    } catch {
       showError('Failed to delete product');
     }
   };

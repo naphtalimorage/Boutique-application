@@ -25,7 +25,7 @@ export default function CheckoutPage() {
     return null;
   }
 
-  const handleCompleteSale = async (mpesaData?: any) => {
+  const handleCompleteSale = async (mpesaData?: { saleId: string; checkoutRequestID: string; mpesaReceiptNumber?: string }) => {
     // If not already submitting (called from M-Pesa), set it now
     if (!submitting) {
       setSubmitting(true);
@@ -68,13 +68,14 @@ export default function CheckoutPage() {
       setTimeout(() => {
         navigate('/dashboard/sales', { replace: true });
       }, 500);
-    } catch (err: any) {
-      showError(err.message || 'Failed to complete sale');
-      setSubmitting(false); // Only reset on error
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Failed to complete sale';
+      showError(message);
+      setSubmitting(false);
     }
   };
 
-  const handleMpesaSuccess = (data: any) => {
+  const handleMpesaSuccess = (data: { saleId: string; checkoutRequestID: string; mpesaReceiptNumber?: string }) => {
     setShowMpesaDialog(false);
     handleCompleteSale(data);
   };
