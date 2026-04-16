@@ -38,6 +38,7 @@ export default function CheckoutPage() {
           quantity: item.quantity,
           size: item.size || undefined,
           color: item.color || undefined,
+          priceOverride: item.customPrice !== undefined ? item.customPrice : undefined,
         })),
         paymentMethod,
         mpesaData: mpesaData || undefined,
@@ -295,19 +296,31 @@ export default function CheckoutPage() {
                     <h3 className="text-xs md:text-sm font-semibold text-muted-foreground">
                       ORDER ITEMS ({items.length})
                     </h3>
-                    {items.map((item) => (
+                    {items.map((item) => {
+                    const unitPrice = item.customPrice !== undefined ? item.customPrice : item.product.price;
+                    const subtotal = unitPrice * item.quantity;
+
+                    return (
                       <div
                         key={item.id}
-                        className="flex justify-between text-xs md:text-sm py-2 border-b border-border"
+                        className="flex flex-col gap-1 text-xs md:text-sm py-2 border-b border-border"
                       >
-                        <span className="truncate flex-1">
-                          {item.product.name} × {item.quantity}
-                        </span>
-                        <span className="font-medium ml-2 md:ml-4">
-                          {formatCurrency(item.product.price * item.quantity)}
-                        </span>
+                        <div className="flex justify-between items-center">
+                          <span className="truncate flex-1">
+                            {item.product.name} × {item.quantity}
+                          </span>
+                          <span className="font-medium ml-2 md:ml-4">
+                            {formatCurrency(subtotal)}
+                          </span>
+                        </div>
+                        {item.customPrice !== undefined && item.customPrice !== item.product.price ? (
+                          <div className="text-[11px] text-muted-foreground">
+                            Sold at {formatCurrency(unitPrice)} each (original {formatCurrency(item.product.price)})
+                          </div>
+                        ) : null}
                       </div>
-                    ))}
+                    );
+                  })}
                   </div>
 
                   <div className="flex flex-col sm:flex-row gap-2 md:gap-3">
@@ -350,22 +363,34 @@ export default function CheckoutPage() {
               <h2 className="text-base md:text-lg font-bold mb-3 md:mb-4">Order Summary</h2>
 
               <div className="space-y-2 md:space-y-3 max-h-48 overflow-y-auto mb-3 md:mb-4">
-                {items.map((item) => (
-                  <div key={item.id} className="flex gap-2 md:gap-3">
-                    <img
-                      src={item.product.imageUrl || '/placeholder-product.svg'}
-                      alt={item.product.name}
-                      className="w-10 h-10 md:w-12 md:h-12 object-cover rounded flex-shrink-0"
-                    />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs md:text-sm font-medium truncate">{item.product.name}</p>
-                      <p className="text-xs text-muted-foreground">Qty: {item.quantity}</p>
+                {items.map((item) => {
+                  const unitPrice = item.customPrice !== undefined ? item.customPrice : item.product.price;
+                  const subtotal = unitPrice * item.quantity;
+
+                  return (
+                    <div key={item.id} className="flex flex-col gap-2 md:gap-3">
+                      <div className="flex gap-2 md:gap-3 items-center">
+                        <img
+                          src={item.product.imageUrl || '/placeholder-product.svg'}
+                          alt={item.product.name}
+                          className="w-10 h-10 md:w-12 md:h-12 object-cover rounded flex-shrink-0"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs md:text-sm font-medium truncate">{item.product.name}</p>
+                          <p className="text-xs text-muted-foreground">Qty: {item.quantity}</p>
+                        </div>
+                        <p className="text-xs md:text-sm font-semibold flex-shrink-0">
+                          {formatCurrency(subtotal)}
+                        </p>
+                      </div>
+                      {item.customPrice !== undefined && item.customPrice !== item.product.price ? (
+                        <div className="text-[11px] text-muted-foreground ml-12">
+                          Sold at {formatCurrency(unitPrice)} each (original {formatCurrency(item.product.price)})
+                        </div>
+                      ) : null}
                     </div>
-                    <p className="text-xs md:text-sm font-semibold flex-shrink-0">
-                      {formatCurrency(item.product.price * item.quantity)}
-                    </p>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
 
               <div className="border-t pt-3 md:pt-4">
