@@ -43,8 +43,8 @@ export default function LoginPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Welcome Back</CardTitle>
-            <CardDescription>Sign in to your account to continue</CardDescription>
+            <CardTitle>Admin Login</CardTitle>
+            <CardDescription>Sign in to access the dashboard</CardDescription>
           </CardHeader>
           <form onSubmit={handleSubmit}>
             <CardContent className="space-y-4">
@@ -82,12 +82,6 @@ export default function LoginPage() {
                   'Sign In'
                 )}
               </Button>
-              <p className="text-sm text-center text-muted-foreground">
-                Don't have an account?{' '}
-                <Link to="/register" className="text-primary hover:underline">
-                  Register
-                </Link>
-              </p>
             </CardFooter>
           </form>
         </Card>

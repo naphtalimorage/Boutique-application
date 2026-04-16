@@ -12,7 +12,6 @@ import DashboardLayout from '@/components/DashboardLayout';
 // Customer Pages
 import HomePage from '@/pages/HomePage';
 import LoginPage from '@/pages/LoginPage';
-import RegisterPage from '@/pages/RegisterPage';
 import ProductDetailPage from '@/pages/ProductDetailPage';
 import CartPage from '@/pages/CartPage';
 import WishlistPage from '@/pages/WishlistPage';
@@ -92,16 +91,6 @@ function AppRoutes() {
           <PublicOnlyRoute>
             <AnimatedRoute>
               <LoginPage />
-            </AnimatedRoute>
-          </PublicOnlyRoute>
-        }
-      />
-      <Route
-        path="/register"
-        element={
-          <PublicOnlyRoute>
-            <AnimatedRoute>
-              <RegisterPage />
             </AnimatedRoute>
           </PublicOnlyRoute>
         }

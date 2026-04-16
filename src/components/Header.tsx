@@ -203,7 +203,6 @@ export default function Header() {
                   ) : (
                     <>
                       <Link to="/login" className="block px-4 py-3 text-sm hover:bg-muted transition-colors min-h-[44px]">Sign In</Link>
-                      <Link to="/register" className="block px-4 py-3 text-sm hover:bg-muted transition-colors min-h-[44px]">Create Account</Link>
                     </>
                   )}
                 </div>
