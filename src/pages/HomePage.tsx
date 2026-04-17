@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { productsAPI, categoriesAPI, subCategoriesAPI } from '@/services/api';
 import type { Product, Category, SubCategory, Gender } from '@/types';
 import ProductCard from '@/components/ProductCard';
+import HeroCarousel from '@/components/HeroCarousel';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
@@ -138,32 +139,12 @@ export default function HomePage() {
 
   return (
     <div>
-      {/* Hero Section */}
-      <section className="bg-gradient-to-br from-primary/5 via-accent to-card py-12 md:py-16 lg:py-24">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-foreground font-display tracking-wide text-balance mb-3 md:mb-4">
-            Discover Our Collection
-          </h2>
-          <p className="text-base md:text-lg lg:text-xl text-muted-foreground font-light tracking-wide max-w-2xl mx-auto">
-            Curated pieces that blend timeless elegance with modern style
-          </p>
-          <div className="mt-6 md:mt-8 flex items-center justify-center gap-2 md:gap-4 text-xs md:text-sm text-muted-foreground flex-wrap px-2">
-            <span className="px-3 md:px-4 py-1.5 md:py-2 bg-card rounded-full shadow-sm border border-border">
-              ✨ Premium Quality
-            </span>
-            <span className="px-3 md:px-4 py-1.5 md:py-2 bg-card rounded-full shadow-sm border border-border">
-              🏷️ Best Prices
-            </span>
-            <span className="px-3 md:px-4 py-1.5 md:py-2 bg-card rounded-full shadow-sm border border-border">
-              🔄 Easy Returns
-            </span>
-          </div>
-        </div>
-      </section>
+      {/* Hero Carousel */}
+      <HeroCarousel />
 
       <div className="max-w-7xl mx-auto px-4 py-6">
-      {/* Category Banner */}
-      {selectedCategory && (
+        {/* Category Banner */}
+        {selectedCategory && (
         <div className="bg-gradient-to-r from-primary/10 to-accent rounded-lg p-6 mb-6 border border-primary/20">
           <h2 className="text-3xl font-bold text-foreground font-display tracking-wide">{selectedCategoryName}</h2>
           <p className="text-muted-foreground mt-1">Browse our collection of {(selectedCategoryName || '').toLowerCase()}</p>
