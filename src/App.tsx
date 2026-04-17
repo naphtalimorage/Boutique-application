@@ -7,6 +7,7 @@ import { ToastProvider } from '@/components/ui/toast';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { ProtectedRoute, PublicOnlyRoute } from '@/components/ProtectedRoute';
 import Header from '@/components/Header';
+import Footer from '@/components/Footer';
 import DashboardLayout from '@/components/DashboardLayout';
 
 // Customer Pages
@@ -34,54 +35,55 @@ function AppRoutes() {
       {/* Public Routes with Header */}
       <Route path="/" element={
         <AnimatedRoute>
-          <div className="min-h-screen bg-background">
+          <div className="min-h-screen bg-background pb-16 md:pb-0">
             <Header />
             <HomePage />
-            <footer className="bg-dark text-white py-8 mt-12">
-              <div className="max-w-7xl mx-auto px-4 text-center text-sm">
-                <p>&copy; {new Date().getFullYear()} Lin Collection. All rights reserved.</p>
-              </div>
-            </footer>
+            <Footer />
           </div>
         </AnimatedRoute>
       } />
       <Route path="/product/:id" element={
         <AnimatedRoute>
-          <div className="min-h-screen bg-background">
+          <div className="min-h-screen bg-background pb-16 md:pb-0">
             <Header />
             <ProductDetailPage />
+            <Footer />
           </div>
         </AnimatedRoute>
       } />
       <Route path="/cart" element={
         <AnimatedRoute>
-          <div className="min-h-screen bg-background">
+          <div className="min-h-screen bg-background pb-16 md:pb-0">
             <Header />
             <CartPage />
+            <Footer />
           </div>
         </AnimatedRoute>
       } />
       <Route path="/wishlist" element={
         <AnimatedRoute>
-          <div className="min-h-screen bg-background">
+          <div className="min-h-screen bg-background pb-16 md:pb-0">
             <Header />
             <WishlistPage />
+            <Footer />
           </div>
         </AnimatedRoute>
       } />
       <Route path="/checkout" element={
         <AnimatedRoute>
-          <div className="min-h-screen bg-background">
+          <div className="min-h-screen bg-background pb-16 md:pb-0">
             <Header />
             <CheckoutPage />
+            <Footer />
           </div>
         </AnimatedRoute>
       } />
       <Route path="/order-confirmation" element={
         <AnimatedRoute>
-          <div className="min-h-screen bg-background">
+          <div className="min-h-screen bg-background pb-16 md:pb-0">
             <Header />
             <OrderConfirmationPage />
+            <Footer />
           </div>
         </AnimatedRoute>
       } />

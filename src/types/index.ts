@@ -53,7 +53,6 @@ export interface Product {
   image_url?: string;
   category_id?: string;
   sub_category_id?: string;
-  gender?: Gender;
   created_at?: string;
   updated_at?: string;
 }
