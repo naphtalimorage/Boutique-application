@@ -75,14 +75,21 @@ export default function HomePage() {
 
   useEffect(() => {
     const fetchCategories = async () => {
-      const [cats, subCats] = await Promise.all([
-        categoriesAPI.getAll(),
-        subCategoriesAPI.getAll(),
-      ]);
-      setCategories(cats);
-      setSubCategories(subCats || []);
+      try {
+        const [cats, subCats] = await Promise.all([
+          categoriesAPI.getAll(),
+          subCategoriesAPI.getAll(),
+        ]);
+        setCategories(cats);
+        setSubCategories(subCats || []);
+      } catch {
+        // Subcategories endpoint might not exist on older backends
+        const cats = await categoriesAPI.getAll();
+        setCategories(cats);
+        setSubCategories([]);
+      }
     };
-    fetchCategories().catch(() => {});
+    fetchCategories();
   }, []);
 
   // Filter subcategories when category changes
