@@ -73,7 +73,7 @@ export default function CartPage() {
                       )}
                     </div>
                     <button
-                      onClick={() => { removeFromCart(item.id); success('Removed from cart'); }}
+                      onClick={() => { removeFromCart(item.id, item.size, item.color); success('Removed from cart'); }}
                       className="text-muted-foreground hover:text-destructive transition-colors p-2 min-h-[44px] min-w-[44px] flex items-center justify-center"
                     >
                       <Trash2 className="h-5 w-5" />

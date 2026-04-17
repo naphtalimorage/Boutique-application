@@ -65,9 +65,11 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   }, []);
 
   const removeFromCart = useCallback((productId: string, size?: string, color?: string) => {
-    setItems((prev) => prev.filter((item) => 
-      !(item.id === productId && item.size === size && item.color === color)
-    ));
+    setItems((prev) => prev.filter((item) => {
+      const sizeMatch = size === undefined ? !item.size : item.size === size;
+      const colorMatch = color === undefined ? !item.color : item.color === color;
+      return !(item.id === productId && sizeMatch && colorMatch);
+    }));
   }, []);
 
   const updateQuantity = useCallback((productId: string, quantity: number, size?: string, color?: string) => {
