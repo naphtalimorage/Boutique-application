@@ -1,20 +1,33 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { productsAPI, categoriesAPI } from '@/services/api';
-import type { Product, Category } from '@/types';
+import { productsAPI, categoriesAPI, subCategoriesAPI } from '@/services/api';
+import type { Product, Category, SubCategory, Gender } from '@/types';
 import ProductCard from '@/components/ProductCard';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
 import { Search, SlidersHorizontal, ChevronDown, Grid3X3, List } from 'lucide-react';
+
+const GENDER_OPTIONS: { value: Gender | ''; label: string }[] = [
+  { value: '', label: 'All' },
+  { value: 'unisex', label: 'Unisex' },
+  { value: 'men', label: 'Men' },
+  { value: 'women', label: 'Women' },
+  { value: 'kids', label: 'Kids' },
+];
 
 export default function HomePage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [subCategories, setSubCategories] = useState<SubCategory[]>([]);
+  const [filteredSubCategories, setFilteredSubCategories] = useState<SubCategory[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || '');
   const [selectedCategory, setSelectedCategory] = useState(searchParams.get('category') || '');
+  const [selectedGender, setSelectedGender] = useState<Gender | ''>(searchParams.get('gender') as Gender | '' || '');
+  const [selectedSubCategory, setSelectedSubCategory] = useState(searchParams.get('subCategory') || '');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [sortBy, setSortBy] = useState('newest');
   const [showFilters, setShowFilters] = useState(false);
@@ -24,8 +37,12 @@ export default function HomePage() {
   useEffect(() => {
     const search = searchParams.get('search') || '';
     const category = searchParams.get('category') || '';
+    const gender = searchParams.get('gender') || '';
+    const subCategory = searchParams.get('subCategory') || '';
     setSearchTerm(search);
     setSelectedCategory(category);
+    setSelectedGender(gender as Gender | '');
+    setSelectedSubCategory(subCategory);
   }, [searchParams]);
 
   useEffect(() => {
@@ -34,7 +51,12 @@ export default function HomePage() {
         setError(null);
         setLoading(true);
         console.log('📦 Fetching products...');
-        const productsData = await productsAPI.getAll(searchTerm, selectedCategory);
+        const productsData = await productsAPI.getAll(
+          searchTerm, 
+          selectedCategory || undefined, 
+          selectedGender || undefined,
+          selectedSubCategory || undefined
+        );
         console.log(`✅ Loaded ${productsData?.length || 0} products`);
         setProducts(productsData || []);
       } catch (error) {
@@ -48,17 +70,40 @@ export default function HomePage() {
 
     const timeoutId = setTimeout(fetchProducts, 300);
     return () => clearTimeout(timeoutId);
-  }, [searchTerm, selectedCategory]);
+  }, [searchTerm, selectedCategory, selectedGender, selectedSubCategory]);
 
   useEffect(() => {
-    categoriesAPI.getAll().then(setCategories).catch(() => {});
+    const fetchCategories = async () => {
+      const [cats, subCats] = await Promise.all([
+        categoriesAPI.getAll(),
+        subCategoriesAPI.getAll(),
+      ]);
+      setCategories(cats);
+      setSubCategories(subCats || []);
+    };
+    fetchCategories().catch(() => {});
   }, []);
+
+  // Filter subcategories when category changes
+  useEffect(() => {
+    if (selectedCategory) {
+      const filtered = subCategories.filter(sc => sc.categoryId === selectedCategory);
+      setFilteredSubCategories(filtered);
+    } else {
+      setFilteredSubCategories([]);
+    }
+    setSelectedSubCategory('');
+  }, [selectedCategory, subCategories]);
 
   const handleRetry = () => {
     setLoading(true);
     setError(null);
-    productsAPI.getAll(searchTerm, selectedCategory)
-      .then((data) => { setProducts(data); setError(null); })
+    productsAPI.getAll(
+      searchTerm, 
+      selectedCategory || undefined, 
+      selectedGender || undefined,
+      selectedSubCategory || undefined
+    ).then((data) => { setProducts(data); setError(null); })
       .catch(() => setError('Failed to load products.'))
       .finally(() => setLoading(false));
     categoriesAPI.getAll().then(setCategories).catch(() => {});
@@ -82,7 +127,11 @@ export default function HomePage() {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    setSearchParams({ search: searchTerm, category: selectedCategory });
+    const params: Record<string, string> = { search: searchTerm };
+    if (selectedCategory) params.category = selectedCategory;
+    if (selectedGender) params.gender = selectedGender;
+    if (selectedSubCategory) params.subCategory = selectedSubCategory;
+    setSearchParams(params);
   };
 
   const selectedCategoryName = categories.find(c => c.id === selectedCategory)?.name;
@@ -143,6 +192,21 @@ export default function HomePage() {
             </div>
           </form>
 
+          {/* Gender Quick Filter */}
+          <div className="flex items-center gap-1 flex-wrap">
+            {GENDER_OPTIONS.slice(1).map((option) => (
+              <Button
+                key={option.value}
+                variant={selectedGender === option.value ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setSelectedGender(option.value as Gender | '')}
+                className="capitalize"
+              >
+                {option.label}
+              </Button>
+            ))}
+          </div>
+
           {/* Sort & View */}
           <div className="flex items-center gap-3">
             <Select value={sortBy} onChange={(e) => setSortBy(e.target.value)} className="w-40">
@@ -180,7 +244,29 @@ export default function HomePage() {
 
         {/* Extended Filters */}
         {showFilters && (
-          <div className="mt-4 pt-4 border-t grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="mt-4 pt-4 border-t grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div>
+              <label className="text-sm font-medium mb-2 block">Category</label>
+              <Select value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)}>
+                <option value="">All Categories</option>
+                {categories.map((cat) => (
+                  <option key={cat.id} value={cat.id}>{cat.name}</option>
+                ))}
+              </Select>
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-2 block">Sub-Category</label>
+              <Select 
+                value={selectedSubCategory} 
+                onChange={(e) => setSelectedSubCategory(e.target.value)}
+                disabled={!selectedCategory}
+              >
+                <option value="">All Sub-Categories</option>
+                {filteredSubCategories.map((subCat) => (
+                  <option key={subCat.id} value={subCat.id}>{subCat.name}</option>
+                ))}
+              </Select>
+            </div>
             <div>
               <label className="text-sm font-medium mb-2 block">Price Range</label>
               <div className="flex items-center gap-2">
@@ -212,12 +298,19 @@ export default function HomePage() {
                 <span className="text-sm">In Stock Only</span>
               </label>
             </div>
-            <div className="flex items-end justify-end">
+            <div className="md:col-span-4 flex items-end justify-end">
               <button
-                onClick={() => { setPriceRange([0, 100000]); setInStockOnly(false); }}
+                onClick={() => { 
+                  setSelectedCategory(''); 
+                  setSelectedGender('');
+                  setSelectedSubCategory('');
+                  setPriceRange([0, 100000]); 
+                  setInStockOnly(false); 
+                  setSearchParams({});
+                }}
                 className="text-sm text-primary hover:underline"
               >
-                Reset Filters
+                Reset All Filters
               </button>
             </div>
           </div>
@@ -229,6 +322,7 @@ export default function HomePage() {
         <p className="text-sm text-muted-foreground">
           {filteredProducts.length} product{filteredProducts.length !== 1 ? 's' : ''} found
           {selectedCategoryName && ` in ${selectedCategoryName}`}
+          {selectedGender && ` for ${selectedGender}`}
         </p>
         {searchTerm && (
           <p className="text-sm text-muted-foreground">

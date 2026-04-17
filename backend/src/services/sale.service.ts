@@ -150,6 +150,19 @@ class SaleService {
 
     let totalAmount = 0;
 
+    // Helper function to calculate effective stock from variations
+    const calculateEffectiveStock = (dbProduct: DbProduct): number => {
+      if (Array.isArray(dbProduct.variations) && dbProduct.variations.length > 0) {
+        return dbProduct.variations.reduce((sum, v) => {
+          if (Array.isArray(v.colors) && v.colors.length > 0) {
+            return sum + v.colors.reduce((colorSum, c) => colorSum + (c.stock || 0), 0);
+          }
+          return sum + (v.stock || 0);
+        }, 0);
+      }
+      return dbProduct.stock || 0;
+    };
+
     for (const item of items) {
       // Get product details
       const { data: product, error: productError } = await supabase
@@ -159,9 +172,17 @@ class SaleService {
         .single();
       const dbProduct = product as DbProduct | null;
 
+      console.log(`[SALE DEBUG] Fetched product: ${product?.name}`);
+      console.log(`  - DB stock column: ${product?.stock}`);
+      console.log(`  - Variations: ${JSON.stringify(product?.variations)}`);
+
       if (productError || !product) {
         throw new Error(`Product not found: ${item.productId}`);
       }
+
+      // Calculate effective stock
+      const effectiveStock = calculateEffectiveStock(dbProduct);
+      console.log(`  - Effective stock (calculated): ${effectiveStock}`);
 
       // If product has variations and size/color specified, validate against variation stock
       if (dbProduct?.variations && item.size && item.color) {
@@ -196,12 +217,12 @@ class SaleService {
           return v;
         });
       } else {
-        // No variations or no size/color specified, check base product stock
+        // No variations or no size/color specified, check effective product stock
         if (!dbProduct) {
           throw new Error(`Product not found: ${item.productId}`);
         }
-        if (dbProduct.stock < item.quantity) {
-          throw new Error(`Insufficient stock for "${dbProduct.name}". Available: ${dbProduct.stock}`);
+        if (effectiveStock < item.quantity) {
+          throw new Error(`Insufficient stock for "${dbProduct.name}". Available: ${effectiveStock}`);
         }
       }
 
@@ -268,38 +289,58 @@ class SaleService {
       const updateData: Record<string, unknown> = {};
       let updatedVariations = validatedItem.product.variations as ProductVariation[] | undefined;
 
-      // If product has variations and size/color specified, update the variations JSONB
-      if (validatedItem.size && validatedItem.color && Array.isArray(updatedVariations)) {
-        console.log(`   Updating variations for size: ${validatedItem.size}, color: ${validatedItem.color}`);
+      // Helper to calculate stock from variations
+      const calcStockFromVariations = (vars: ProductVariation[]) => {
+        return vars.reduce((sum, v) => {
+          if (Array.isArray(v.colors) && v.colors.length > 0) {
+            return sum + v.colors.reduce((cs, c) => cs + (c.stock || 0), 0);
+          }
+          return sum + (v.stock || 0);
+        }, 0);
+      };
 
-        updatedVariations = updatedVariations.map((v) => {
-          if (v.size === validatedItem.size) {
-            const updatedColors = v.colors.map((c) => {
-              if (c.name === validatedItem.color) {
-                console.log(`   Updating color "${c.name}" stock from ${c.stock} to ${c.stock - validatedItem.quantity}`);
-                return { ...c, stock: c.stock - validatedItem.quantity };
-              }
-              return c;
-            });
+      // If product has variations, always update stock from variations
+      if (Array.isArray(updatedVariations) && updatedVariations.length > 0) {
+        if (validatedItem.size && validatedItem.color) {
+          // Update specific variation
+          console.log(`   Updating variations for size: ${validatedItem.size}, color: ${validatedItem.color}`);
+
+          updatedVariations = updatedVariations.map((v) => {
+            if (v.size === validatedItem.size) {
+              const updatedColors = v.colors.map((c) => {
+                if (c.name === validatedItem.color) {
+                  console.log(`   Updating color "${c.name}" stock from ${c.stock} to ${c.stock - validatedItem.quantity}`);
+                  return { ...c, stock: c.stock - validatedItem.quantity };
+                }
+                return c;
+              });
+              return {
+                ...v,
+                colors: updatedColors,
+                stock: updatedColors.reduce((sum, color) => sum + (color.stock || 0), 0),
+              };
+            }
             return {
               ...v,
-              colors: updatedColors,
-              stock: updatedColors.reduce((sum, color) => sum + (color.stock || 0), 0),
+              stock: v.colors.reduce((sum, color) => sum + (color.stock || 0), 0),
             };
-          }
-          return {
-            ...v,
-            stock: v.colors.reduce((sum, color) => sum + (color.stock || 0), 0),
-          };
-        });
+          });
 
-        updateData.variations = updatedVariations;
-        updateData.stock = updatedVariations.reduce(
-          (sum, variation) => sum + (variation.stock || 0),
-          0
-        );
+          updateData.variations = updatedVariations;
+          updateData.stock = calcStockFromVariations(updatedVariations);
+          console.log(`  - Calculated new stock from variations: ${updateData.stock}`);
+        } else {
+          // No size/color provided but product has variations
+          // Calculate stock from variations (minus sold quantity if applicable)
+          const currentStock = calcStockFromVariations(updatedVariations);
+          const newStock = currentStock - validatedItem.quantity;
+          updateData.stock = newStock;
+          console.log(`  - Updated stock from variations (no size/color specified): ${newStock}`);
+        }
       } else {
+        // No variations at all - use old logic
         updateData.stock = validatedItem.product.stock - validatedItem.quantity;
+        console.log(`  - Updated stock directly: ${updateData.stock}`);
       }
 
       // Execute the stock update

@@ -21,11 +21,20 @@ CREATE TABLE IF NOT EXISTS users (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Categories table
+-- Categories table (main categories like Clothes, Shoes, Accessories, etc.)
 CREATE TABLE IF NOT EXISTS categories (
   id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
   name VARCHAR(255) UNIQUE NOT NULL,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Subcategories table (sub-categories like T-shirts, Jeans, Trousers, Shorts for Clothes, etc.)
+CREATE TABLE IF NOT EXISTS subcategories (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  name VARCHAR(255) NOT NULL,
+  category_id UUID REFERENCES categories(id) ON DELETE CASCADE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  UNIQUE(category_id, name)
 );
 
 -- Products table
@@ -33,6 +42,8 @@ CREATE TABLE IF NOT EXISTS products (
   id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
   name VARCHAR(255) NOT NULL,
   category_id UUID REFERENCES categories(id) ON DELETE SET NULL,
+  sub_category_id UUID REFERENCES subcategories(id) ON DELETE SET NULL,
+  gender VARCHAR(50) DEFAULT 'unisex' CHECK (gender IN ('men', 'women', 'unisex', 'kids')),
   price DECIMAL(10, 2) NOT NULL CHECK (price >= 0),
   stock INTEGER NOT NULL DEFAULT 0 CHECK (stock >= 0),
   image_url TEXT,
@@ -54,6 +65,9 @@ CREATE TABLE IF NOT EXISTS sales (
 -- ================================================
 
 CREATE INDEX IF NOT EXISTS idx_products_category_id ON products(category_id);
+CREATE INDEX IF NOT EXISTS idx_products_sub_category_id ON products(sub_category_id);
+CREATE INDEX IF NOT EXISTS idx_products_gender ON products(gender);
+CREATE INDEX IF NOT EXISTS idx_subcategories_category_id ON subcategories(category_id);
 CREATE INDEX IF NOT EXISTS idx_sales_product_id ON sales(product_id);
 CREATE INDEX IF NOT EXISTS idx_sales_created_at ON sales(created_at);
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
@@ -96,6 +110,60 @@ INSERT INTO categories (name) VALUES
   ('Bags'),
   ('Jewelry')
 ON CONFLICT (name) DO NOTHING;
+
+-- Insert default subcategories for Clothes
+INSERT INTO subcategories (name, category_id) 
+SELECT name, id FROM categories WHERE name = 'Clothes'
+ON CONFLICT (category_id, name) DO NOTHING;
+
+INSERT INTO subcategories (name, category_id)
+SELECT subcat.name, cat.id
+FROM categories cat
+CROSS JOIN LATERAL (
+  VALUES ('T-Shirts'), ('Shirts'), ('Jeans'), ('Trousers'), ('Shorts'), ('Dresses'), ('Skirts'), ('Jackets'), ('Hoodies'), ('Blazers')
+) AS subcat(name)
+WHERE cat.name = 'Clothes'
+ON CONFLICT (category_id, name) DO NOTHING;
+
+-- Insert default subcategories for Shoes
+INSERT INTO subcategories (name, category_id)
+SELECT subcat.name, cat.id
+FROM categories cat
+CROSS JOIN LATERAL (
+  VALUES ('Sneakers'), ('Formal Shoes'), ('Sandals'), ('Boots'), ('Heels'), ('Flats'), ('Loafers'), ('Athletic Shoes')
+) AS subcat(name)
+WHERE cat.name = 'Shoes'
+ON CONFLICT (category_id, name) DO NOTHING;
+
+-- Insert default subcategories for Accessories
+INSERT INTO subcategories (name, category_id)
+SELECT subcat.name, cat.id
+FROM categories cat
+CROSS JOIN LATERAL (
+  VALUES ('Belts'), ('Watches'), ('Sunglasses'), ('Hats'), ('Scarves'), ('Gloves'), ('Ties'), ('Wallets')
+) AS subcat(name)
+WHERE cat.name = 'Accessories'
+ON CONFLICT (category_id, name) DO NOTHING;
+
+-- Insert default subcategories for Bags
+INSERT INTO subcategories (name, category_id)
+SELECT subcat.name, cat.id
+FROM categories cat
+CROSS JOIN LATERAL (
+  VALUES ('Handbags'), ('Backpacks'), ('Crossbody Bags'), ('Wallet & Clutches'), ('Travel Bags'), ('Laptop Bags')
+) AS subcat(name)
+WHERE cat.name = 'Bags'
+ON CONFLICT (category_id, name) DO NOTHING;
+
+-- Insert default subcategories for Jewelry
+INSERT INTO subcategories (name, category_id)
+SELECT subcat.name, cat.id
+FROM categories cat
+CROSS JOIN LATERAL (
+  VALUES ('Rings'), ('Necklaces'), ('Earrings'), ('Bracelets'), ('Anklets'), ('Brooches')
+) AS subcat(name)
+WHERE cat.name = 'Jewelry'
+ON CONFLICT (category_id, name) DO NOTHING;
 
 -- ================================================
 -- SUPABASE STORAGE BUCKET

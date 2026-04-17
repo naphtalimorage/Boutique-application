@@ -193,6 +193,12 @@ export default function ProductDetailPage() {
             {/* Brand/Category */}
             <div className="flex items-center gap-2 flex-wrap">
               <Badge variant="outline" className="text-xs sm:text-sm">{product.category?.name}</Badge>
+              {product.subCategory?.name && (
+                <Badge variant="outline" className="text-xs sm:text-sm">{product.subCategory?.name}</Badge>
+              )}
+              {product.gender && product.gender !== 'unisex' && (
+                <Badge variant="secondary" className="text-xs sm:text-sm capitalize">{product.gender}</Badge>
+              )}
               {availableStock > 0 && availableStock <= 5 && (
                 <Badge className="bg-warning text-white text-xs sm:text-sm">⚡ Only {availableStock} left</Badge>
               )}

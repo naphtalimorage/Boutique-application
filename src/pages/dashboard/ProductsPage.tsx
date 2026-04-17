@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { productsAPI, categoriesAPI } from '@/services/api';
-import type { Product, Category, SizeVariation } from '@/types';
+import { productsAPI, categoriesAPI, subCategoriesAPI } from '@/services/api';
+import type { Product, Category, SubCategory, SizeVariation, Gender } from '@/types';
 import { useToast } from '@/components/ui/toast';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -15,6 +15,13 @@ import ImageUpload from '@/components/ImageUpload';
 import { SizeVariationsEditor } from '@/components/SizeVariationsEditor';
 import { Plus, Edit, Trash2, Search, Loader2, Package } from 'lucide-react';
 
+const GENDER_OPTIONS: { value: Gender; label: string }[] = [
+  { value: 'unisex', label: 'Unisex' },
+  { value: 'men', label: 'Men' },
+  { value: 'women', label: 'Women' },
+  { value: 'kids', label: 'Kids' },
+];
+
 interface FormErrors {
   name?: string;
   category?: string;
@@ -27,6 +34,8 @@ interface FormErrors {
 export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [subCategories, setSubCategories] = useState<SubCategory[]>([]);
+  const [filteredSubCategories, setFilteredSubCategories] = useState<SubCategory[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -34,6 +43,8 @@ export default function ProductsPage() {
   const [formData, setFormData] = useState({
     name: '',
     categoryId: '',
+    subCategoryId: '',
+    gender: 'unisex' as Gender,
     price: 0,
     stock: 0,
   });
@@ -53,12 +64,14 @@ export default function ProductsPage() {
 
   const fetchData = async () => {
     try {
-      const [productsData, categoriesData] = await Promise.all([
+      const [productsData, categoriesData, subCategoriesData] = await Promise.all([
         productsAPI.getAll(),
         categoriesAPI.getAll(),
+        subCategoriesAPI.getAll(),
       ]);
       setProducts(productsData);
       setCategories(categoriesData);
+      setSubCategories(subCategoriesData || []);
     } catch {
       showError('Failed to fetch data');
     } finally {
@@ -118,6 +131,8 @@ export default function ProductsPage() {
       setFormData({
         name: product.name,
         categoryId: product.categoryId,
+        subCategoryId: product.subCategoryId || '',
+        gender: product.gender || 'unisex',
         price: product.price,
         stock: product.stock,
       });
@@ -127,11 +142,18 @@ export default function ProductsPage() {
       });
       setVariations(product.variations || []);
       setExpandedSizes(new Set(product.variations?.map((_, i) => i) || []));
+      // Filter subcategories based on product category
+      if (product.categoryId) {
+        const filtered = subCategories.filter(sc => sc.categoryId === product.categoryId);
+        setFilteredSubCategories(filtered);
+      } else {
+        setFilteredSubCategories([]);
+      }
     } else {
       setEditingProduct(null);
-      setFormData({ name: '', categoryId: '', price: 0, stock: 0 });
+      setFormData({ name: '', categoryId: '', subCategoryId: '', gender: 'unisex', price: 0, stock: 0 });
       setUploadedImage({ file: null, preview: null });
-      // Start with one default size and color
+      setFilteredSubCategories([]);
       setVariations([{ size: '', stock: 0, colors: [{ name: '', stock: 0, imageUrl: '' }] }]);
       setExpandedSizes(new Set([0]));
     }
@@ -157,6 +179,8 @@ export default function ProductsPage() {
       const productData = {
         name: formData.name.trim(),
         categoryId: formData.categoryId,
+        subCategoryId: formData.subCategoryId || undefined,
+        gender: formData.gender,
         price: formData.price,
         stock: formData.stock,
         variations,
@@ -170,13 +194,15 @@ export default function ProductsPage() {
       }
 
       // Re-fetch products
-      const [productsData, categoriesData] = await Promise.all([
+      const [productsData, categoriesData, subCategoriesData] = await Promise.all([
         productsAPI.getAll(),
         categoriesAPI.getAll(),
+        subCategoriesAPI.getAll(),
       ]);
 
       setProducts(productsData);
       setCategories(categoriesData);
+      setSubCategories(subCategoriesData || []);
 
       setDialogOpen(false);
       setFormErrors({});
@@ -255,6 +281,8 @@ export default function ProductsPage() {
                     <TableHead>Image</TableHead>
                     <TableHead>Name</TableHead>
                     <TableHead>Category</TableHead>
+                    <TableHead>Sub-Category</TableHead>
+                    <TableHead>Gender</TableHead>
                     <TableHead>Price</TableHead>
                     <TableHead>Stock</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
@@ -272,6 +300,8 @@ export default function ProductsPage() {
                       </TableCell>
                       <TableCell className="font-medium">{product.name}</TableCell>
                       <TableCell>{product.categories?.name || product.category?.name || 'Uncategorized'}</TableCell>
+                      <TableCell>{product.subCategory?.name || '-'}</TableCell>
+                      <TableCell className="capitalize">{product.gender || 'unisex'}</TableCell>
                       <TableCell>{formatCurrency(product.price)}</TableCell>
                       <TableCell>
                         <Badge variant={product.stock <= 5 ? 'destructive' : 'default'}>
@@ -328,7 +358,14 @@ export default function ProductsPage() {
                   id="category"
                   value={formData.categoryId}
                   onChange={(e) => {
-                    setFormData({ ...formData, categoryId: e.target.value });
+                    const newCategoryId = e.target.value;
+                    setFormData({ 
+                      ...formData, 
+                      categoryId: newCategoryId,
+                      subCategoryId: ''
+                    });
+                    const filtered = subCategories.filter(sc => sc.categoryId === newCategoryId);
+                    setFilteredSubCategories(filtered);
                     if (formErrors.category) setFormErrors({ ...formErrors, category: undefined });
                   }}
                   className={formErrors.category ? 'border-destructive' : ''}
@@ -343,6 +380,40 @@ export default function ProductsPage() {
                 {formErrors.category && (
                   <p className="text-sm text-destructive mt-1">{formErrors.category}</p>
                 )}
+              </div>
+
+              {/* Sub-Category */}
+              <div>
+                <Label htmlFor="subCategory">Sub-Category</Label>
+                <Select
+                  id="subCategory"
+                  value={formData.subCategoryId}
+                  onChange={(e) => setFormData({ ...formData, subCategoryId: e.target.value })}
+                  disabled={!formData.categoryId}
+                >
+                  <option value="">Select sub-category (optional)</option>
+                  {filteredSubCategories.map((subCat) => (
+                    <option key={subCat.id} value={subCat.id}>
+                      {subCat.name}
+                    </option>
+                  ))}
+                </Select>
+              </div>
+
+              {/* Gender */}
+              <div>
+                <Label htmlFor="gender">Gender *</Label>
+                <Select
+                  id="gender"
+                  value={formData.gender}
+                  onChange={(e) => setFormData({ ...formData, gender: e.target.value as Gender })}
+                >
+                  {GENDER_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </Select>
               </div>
 
               {/* Price & Stock */}

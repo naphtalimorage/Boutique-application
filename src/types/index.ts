@@ -10,6 +10,15 @@ export interface Category {
   name: string;
 }
 
+export type Gender = 'men' | 'women' | 'unisex' | 'kids';
+
+export interface SubCategory {
+  id: string;
+  name: string;
+  categoryId: string;
+  category?: Category;
+}
+
 export interface ColorVariation {
   name: string;
   stock: number;
@@ -26,6 +35,8 @@ export interface Product {
   id: string;
   name: string;
   categoryId: string;
+  subCategoryId?: string;
+  gender?: Gender;
   price: number;
   stock: number;
   imageUrl?: string;
@@ -36,10 +47,13 @@ export interface Product {
     colors?: Array<{ name: string; stock: number }>;
   }>;
   category?: Category;
+  subCategory?: SubCategory;
   categories?: Category; // From Supabase join query (singular category embedded)
   // Legacy snake_case fields (from API response)
   image_url?: string;
   category_id?: string;
+  sub_category_id?: string;
+  gender?: Gender;
   created_at?: string;
   updated_at?: string;
 }
@@ -89,6 +103,8 @@ export interface AuthResponse {
 export interface CreateProductRequest {
   name: string;
   categoryId: string;
+  subCategoryId?: string;
+  gender?: Gender;
   price: number;
   stock: number;
   imageUrl?: string;
@@ -98,6 +114,8 @@ export interface CreateProductRequest {
 export interface UpdateProductRequest extends Partial<CreateProductRequest> {
   name?: string;
   categoryId?: string;
+  subCategoryId?: string;
+  gender?: Gender;
   price?: number;
   stock?: number;
   imageUrl?: string;

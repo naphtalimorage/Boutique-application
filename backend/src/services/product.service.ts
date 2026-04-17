@@ -16,6 +16,8 @@ interface ProductVariation {
 export interface CreateProductInput {
   name: string;
   categoryId: string;
+  subCategoryId?: string;
+  gender?: string;
   price: number;
   stock: number;
   imageUrl?: string;
@@ -28,6 +30,8 @@ interface DbProduct {
   id: string;
   name: string;
   category_id?: string;
+  sub_category_id?: string;
+  gender?: string;
   price: number;
   stock: number;
   image_url?: string;
@@ -68,12 +72,16 @@ class ProductService {
 
   private transformProduct(dbProduct: DbProduct): Record<string, unknown> {
     const variations = dbProduct.variations || [];
+    const calculatedStock = this.getAggregateStock(dbProduct);
+    
     return {
       ...dbProduct,
       imageUrl: dbProduct.image_url,
       categoryId: dbProduct.category_id,
+      subCategoryId: dbProduct.sub_category_id,
+      gender: dbProduct.gender || 'unisex',
       variations,
-      stock: this.getAggregateStock(dbProduct),
+      stock: calculatedStock,
     };
   }
 
@@ -127,10 +135,10 @@ class ProductService {
     }
   }
 
-  async getAll(search?: string, categoryId?: string) {
+  async getAll(search?: string, categoryId?: string, gender?: string, subCategoryId?: string) {
     let query = supabase
       .from('products')
-      .select('*, categories(*)');
+      .select('*, categories(*), subcategories(*)');
 
     if (search) {
       query = query.ilike('name', `%${search}%`);
@@ -138,6 +146,14 @@ class ProductService {
 
     if (categoryId) {
       query = query.eq('category_id', categoryId);
+    }
+
+    if (gender) {
+      query = query.eq('gender', gender);
+    }
+
+    if (subCategoryId) {
+      query = query.eq('sub_category_id', subCategoryId);
     }
 
     const { data, error } = await query.order('created_at', { ascending: false });
@@ -150,7 +166,7 @@ class ProductService {
   async getById(id: string) {
     const { data, error } = await supabase
       .from('products')
-      .select('*, categories(*)')
+      .select('*, categories(*), subcategories(*)')
       .eq('id', id)
       .single();
 
@@ -167,12 +183,14 @@ class ProductService {
       .insert({
         name: input.name,
         category_id: input.categoryId,
+        sub_category_id: input.subCategoryId,
+        gender: input.gender || 'unisex',
         price: input.price,
         stock: this.normalizeInputStock(input),
         image_url: input.imageUrl,
         variations: input.variations || [],
       })
-      .select('*, categories(*)')
+      .select('*, categories(*), subcategories(*)')
       .single();
 
     if (error || !product) {
@@ -186,6 +204,8 @@ class ProductService {
     const updateData: Record<string, unknown> = {};
     if (input.name !== undefined) updateData.name = input.name;
     if (input.categoryId !== undefined) updateData.category_id = input.categoryId;
+    if (input.subCategoryId !== undefined) updateData.sub_category_id = input.subCategoryId;
+    if (input.gender !== undefined) updateData.gender = input.gender;
     if (input.price !== undefined) updateData.price = input.price;
     if (input.stock !== undefined) updateData.stock = input.stock;
     if (input.imageUrl !== undefined) updateData.image_url = input.imageUrl;
@@ -200,7 +220,7 @@ class ProductService {
       .from('products')
       .update(updateData)
       .eq('id', id)
-      .select('*, categories(*)')
+      .select('*, categories(*), subcategories(*)')
       .single();
 
     if (error || !product) {

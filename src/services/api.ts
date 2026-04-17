@@ -3,6 +3,7 @@ import { getSupabaseClient } from '@/lib/supabase';
 import type {
   User,
   Category,
+  SubCategory,
   Product,
   Sale,
   LoginRequest,
@@ -115,10 +116,12 @@ export const authAPI = {
 
 // Products API
 export const productsAPI = {
-  getAll: async (search?: string, categoryId?: string): Promise<Product[]> => {
+  getAll: async (search?: string, categoryId?: string, gender?: string, subCategoryId?: string): Promise<Product[]> => {
     const params = new URLSearchParams();
     if (search) params.append('search', search);
     if (categoryId) params.append('categoryId', categoryId);
+    if (gender) params.append('gender', gender);
+    if (subCategoryId) params.append('subCategoryId', subCategoryId);
     return getWithCache<Product[]>(`/products?${params.toString()}`);
   },
   getById: async (id: string): Promise<Product> => {
@@ -188,6 +191,26 @@ export const categoriesAPI = {
   create: async (name: string): Promise<Category> => {
     const response = await api.post('/categories', { name });
     return response.data;
+  },
+};
+
+// SubCategories API
+export const subCategoriesAPI = {
+  getAll: async (categoryId?: string): Promise<SubCategory[]> => {
+    const params = new URLSearchParams();
+    if (categoryId) params.append('categoryId', categoryId);
+    return getWithCache<SubCategory[]>(`/subcategories?${params.toString()}`);
+  },
+  create: async (name: string, categoryId: string): Promise<SubCategory> => {
+    const response = await api.post('/subcategories', { name, categoryId });
+    return response.data;
+  },
+  update: async (id: string, data: Partial<{ name: string; categoryId: string }>): Promise<SubCategory> => {
+    const response = await api.put(`/subcategories/${id}`, data);
+    return response.data;
+  },
+  delete: async (id: string): Promise<void> => {
+    await api.delete(`/subcategories/${id}`);
   },
 };
 

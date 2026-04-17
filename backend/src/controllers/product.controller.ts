@@ -23,10 +23,12 @@ const upload = multer({
 export class ProductController {
   async getAll(req: Request, res: Response, next: NextFunction) {
     try {
-      const { search, categoryId } = req.query;
+      const { search, categoryId, gender, subCategoryId } = req.query;
       const products = await productService.getAll(
         search as string,
-        categoryId as string
+        categoryId as string,
+        gender as string,
+        subCategoryId as string
       );
       res.status(200).json(products);
     } catch (error) {

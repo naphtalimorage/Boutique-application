@@ -105,6 +105,11 @@ export default function ProductCard({ product }: ProductCardProps) {
               NEW
             </span>
           )}
+          {product.gender && product.gender !== 'unisex' && (
+            <span className="inline-flex items-center px-2 py-0.5 bg-secondary text-white text-xs font-bold rounded-sm capitalize">
+              {product.gender}
+            </span>
+          )}
         </div>
 
         {/* Quick Actions Overlay - Desktop hover, Mobile always visible */}
