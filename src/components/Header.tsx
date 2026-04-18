@@ -90,7 +90,7 @@ export default function Header() {
           <div className="hidden md:flex items-center gap-4">
             <a href="mailto:support@lincollection.com" className="hover:text-primary transition-colors">Help & Support</a>
             <span className="text-muted-foreground">|</span>
-            <span className="text-gray-300">📞 0800-LIN-COLL</span>
+            <span className="text-gray-300">📞 +254 715 024665</span>
           </div>
         </div>
       </div>

@@ -51,8 +51,8 @@ export default function Footer() {
             <div>
               <h4 className="font-semibold mb-4">Contact Us</h4>
               <ul className="space-y-2 text-gray-400 text-sm">
-                <li>📞 0800-LIN-COLL</li>
-                <li>📧 support@lincollection.com</li>
+                <li>📞 +254 715 024665</li>
+                <li>📧 gidiikiplaa90@gmail.com</li>
                 <li>🏪 Open: 9AM - 8PM</li>
               </ul>
             </div>
