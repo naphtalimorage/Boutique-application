@@ -95,7 +95,7 @@ export default function HomePage() {
   // Filter subcategories when category changes
   useEffect(() => {
     if (selectedCategory) {
-      const filtered = subCategories.filter(sc => sc.categoryId === selectedCategory);
+      const filtered = subCategories.filter(sc => sc.categoryId === selectedCategory || sc.category_id === selectedCategory);
       setFilteredSubCategories(filtered);
     } else {
       setFilteredSubCategories([]);

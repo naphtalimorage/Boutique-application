@@ -17,6 +17,8 @@ export interface SubCategory {
   name: string;
   categoryId: string;
   category?: Category;
+  // Legacy snake_case field from Supabase
+  category_id?: string;
 }
 
 export interface ColorVariation {

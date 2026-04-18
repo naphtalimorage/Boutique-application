@@ -144,7 +144,7 @@ export default function ProductsPage() {
       setExpandedSizes(new Set(product.variations?.map((_, i) => i) || []));
       // Filter subcategories based on product category
       if (product.categoryId) {
-        const filtered = subCategories.filter(sc => sc.categoryId === product.categoryId);
+        const filtered = subCategories.filter(sc => sc.categoryId === product.categoryId || sc.category_id === product.categoryId);
         setFilteredSubCategories(filtered);
       } else {
         setFilteredSubCategories([]);
@@ -364,7 +364,7 @@ export default function ProductsPage() {
                       categoryId: newCategoryId,
                       subCategoryId: ''
                     });
-                    const filtered = subCategories.filter(sc => sc.categoryId === newCategoryId);
+                    const filtered = subCategories.filter(sc => sc.categoryId === newCategoryId || sc.category_id === newCategoryId);
                     setFilteredSubCategories(filtered);
                     if (formErrors.category) setFormErrors({ ...formErrors, category: undefined });
                   }}
