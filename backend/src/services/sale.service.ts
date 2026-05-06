@@ -181,7 +181,7 @@ class SaleService {
       }
 
       // Calculate effective stock
-      const effectiveStock = calculateEffectiveStock(dbProduct);
+      const effectiveStock = calculateEffectiveStock(dbProduct as DbProduct);
       console.log(`  - Effective stock (calculated): ${effectiveStock}`);
 
       // If product has variations and size/color specified, validate against variation stock

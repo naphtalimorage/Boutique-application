@@ -199,7 +199,9 @@ export const subCategoriesAPI = {
   getAll: async (categoryId?: string): Promise<SubCategory[]> => {
     const params = new URLSearchParams();
     if (categoryId) params.append('categoryId', categoryId);
-    return getWithCache<SubCategory[]>(`/subcategories?${params.toString()}`);
+    const response = await api.get<SubCategory[]>(`/subcategories?${params.toString()}`);
+    console.log('subCategoriesAPI.getAll response:', response.data);
+    return response.data;
   },
   create: async (name: string, categoryId: string): Promise<SubCategory> => {
     const response = await api.post('/subcategories', { name, categoryId });

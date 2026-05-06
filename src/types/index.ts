@@ -15,10 +15,9 @@ export type Gender = 'men' | 'women' | 'unisex' | 'kids';
 export interface SubCategory {
   id: string;
   name: string;
-  categoryId: string;
+  categoryId?: string; // camelCase from some APIs
+  category_id?: string; // snake_case from Supabase
   category?: Category;
-  // Legacy snake_case field from Supabase
-  category_id?: string;
 }
 
 export interface ColorVariation {

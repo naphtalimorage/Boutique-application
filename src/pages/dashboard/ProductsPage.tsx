@@ -69,6 +69,7 @@ export default function ProductsPage() {
         categoriesAPI.getAll(),
         subCategoriesAPI.getAll(),
       ]);
+      console.log('ProductsPage - subCategories loaded:', subCategoriesData);
       setProducts(productsData);
       setCategories(categoriesData);
       setSubCategories(subCategoriesData || []);

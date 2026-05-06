@@ -81,9 +81,14 @@ export default function HomePage() {
           subCategoriesAPI.getAll(),
         ]);
         setCategories(cats);
+        console.log('HomePage - subCategories loaded:', subCats);
+        console.log('HomePage - subCategories length:', subCats?.length);
+        if (subCats && subCats.length > 0) {
+          console.log('First subCategory sample:', subCats[0]);
+        }
         setSubCategories(subCats || []);
-      } catch {
-        // Subcategories endpoint might not exist on older backends
+      } catch (err) {
+        console.error('Error loading categories/subcategories:', err);
         const cats = await categoriesAPI.getAll();
         setCategories(cats);
         setSubCategories([]);
@@ -95,10 +100,12 @@ export default function HomePage() {
   // Filter subcategories when category changes
   useEffect(() => {
     if (selectedCategory) {
-      const filtered = subCategories.filter(sc => sc.categoryId === selectedCategory || sc.category_id === selectedCategory);
+      const filtered = subCategories.filter(
+        sc => sc.categoryId === selectedCategory || sc.category_id === selectedCategory
+      );
       setFilteredSubCategories(filtered);
     } else {
-      setFilteredSubCategories([]);
+      setFilteredSubCategories(subCategories);
     }
     setSelectedSubCategory('');
   }, [selectedCategory, subCategories]);
