@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useWishlist } from '@/context/WishlistContext';
-import { useCart } from '@/context/CartContext';
-import { useToast } from '@/components/ui/toast';
+import { useCart } from '@/hooks/useCart';
+import { useToast } from '@/hooks/useToast';
 import ProductCard from '@/components/ProductCard';
 import { Button } from '@/components/ui/button';
 import { Heart, ShoppingCart, ArrowLeft, Trash2 } from 'lucide-react';

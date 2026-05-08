@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { salesAPI, productsAPI } from '@/services/api';
 import type { Sale, Product, SaleCartItem } from '@/types';
-import { useToast } from '@/components/ui/toast';
+import { useToast } from '@/hooks/useToast';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -48,19 +48,7 @@ export default function SalesPage() {
   
   const { success, error: showError } = useToast();
 
-  useEffect(() => {
-    fetchData();
-    
-    // Refresh data when window regains focus (e.g., after completing a sale)
-    const handleFocus = () => {
-      fetchData();
-    };
-    
-    window.addEventListener('focus', handleFocus);
-    return () => window.removeEventListener('focus', handleFocus);
-  }, []);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       const [salesData, productsData] = await Promise.all([
         salesAPI.getAll(startDate || undefined, endDate || undefined),
@@ -73,11 +61,39 @@ export default function SalesPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [startDate, endDate, showError]);
+
+  useEffect(() => {
+    fetchData();
+    
+    // Refresh data when window regains focus (e.g., after completing a sale)
+    const handleFocus = () => {
+      fetchData();
+    };
+    
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, [fetchData]);
 
   const handleFilter = () => {
     fetchData();
   };
+
+  const successToast = success;
+
+  // Manual refresh function
+  const refreshProducts = useCallback(async () => {
+    setRefreshingProducts(true);
+    try {
+      const productsData = await productsAPI.getAll();
+      setProducts(productsData);
+      successToast('Products refreshed!');
+    } catch {
+      showError('Failed to refresh products');
+    } finally {
+      setRefreshingProducts(false);
+    }
+  }, [successToast, showError]);
 
   // Refresh products when dialog opens to get latest stock
   const handleDialogOpen = (open: boolean) => {
@@ -85,20 +101,6 @@ export default function SalesPage() {
     if (open) {
       clearCart();
       refreshProducts();
-    }
-  };
-
-  // Manual refresh function
-  const refreshProducts = async () => {
-    setRefreshingProducts(true);
-    try {
-      const productsData = await productsAPI.getAll();
-      setProducts(productsData);
-      success('Products refreshed!');
-    } catch {
-      showError('Failed to refresh products');
-    } finally {
-      setRefreshingProducts(false);
     }
   };
 

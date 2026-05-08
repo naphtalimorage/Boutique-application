@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useCart } from '@/context/CartContext';
-import { useToast } from '@/components/ui/toast';
+import { useCart } from '@/hooks/useCart';
+import { useToast } from '@/hooks/useToast';
 import { formatCurrency } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import MpesaPaymentDialog from '@/components/MpesaPaymentDialog';

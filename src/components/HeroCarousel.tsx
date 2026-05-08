@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface CarouselSlide {
@@ -67,17 +67,17 @@ export default function HeroCarousel({
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
 
-  const nextSlide = () => {
+  const nextSlide = useCallback(() => {
     if (isTransitioning) return;
     setIsTransitioning(true);
     setCurrentIndex((prev) => (prev + 1) % slides.length);
-  };
+  }, [isTransitioning, slides.length]);
 
-  const prevSlide = () => {
+  const prevSlide = useCallback(() => {
     if (isTransitioning) return;
     setIsTransitioning(true);
     setCurrentIndex((prev) => (prev - 1 + slides.length) % slides.length);
-  };
+  }, [isTransitioning, slides.length]);
 
   const goToSlide = (index: number) => {
     if (isTransitioning || index === currentIndex) return;
@@ -93,7 +93,7 @@ export default function HeroCarousel({
     }, autoPlayInterval);
     
     return () => clearInterval(interval);
-  }, [autoPlay, autoPlayInterval, isTransitioning]);
+  }, [autoPlay, autoPlayInterval, nextSlide]);
 
   useEffect(() => {
     const timer = setTimeout(() => {

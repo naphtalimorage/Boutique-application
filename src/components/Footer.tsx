@@ -1,8 +1,8 @@
 import { Link, useLocation } from 'react-router-dom';
 import { Home, ShoppingCart, User, Heart } from 'lucide-react';
-import { useCart } from '@/context/CartContext';
-import { useWishlist } from '@/context/WishlistContext';
-import { useAuth } from '@/context/AuthContext';
+import { useCart } from '@/hooks/useCart';
+import { useWishlist } from '@/hooks/useWishlist';
+import { useAuth } from '@/hooks/useAuth';
 
 export default function Footer() {
   const { getCartCount } = useCart();

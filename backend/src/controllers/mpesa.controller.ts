@@ -284,8 +284,8 @@ export class MpesaController {
                       originalPrice: product.price,
                       timestamp: updateData.transaction_date as string || new Date().toISOString(),
                       paymentMethod: 'mobile_money',
-                      size: (item as any).size,
-                      color: (item as any).color,
+                      size: (item as { size?: string }).size,
+                      color: (item as { color?: string }).color,
                       mpesaData: {
                         mpesaReceiptNumber: updateData.mpesa_receipt_number as string,
                         phoneNumber: mpesaTx.phone_number,

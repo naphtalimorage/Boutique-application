@@ -11,10 +11,10 @@ interface ImageUploadProps {
 export default function ImageUpload({ value, onChange, onError }: ImageUploadProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const MAX_SIZE = 2 * 1024 * 1024; // 2MB
-  const ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'];
-
   const handleFileSelect = useCallback((file: File) => {
+    const ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'];
+    const MAX_SIZE = 2 * 1024 * 1024; // 2MB
+
     if (!ALLOWED_TYPES.includes(file.type)) {
       onError?.('Please select an image file (JPEG, PNG, GIF, WebP)');
       return;

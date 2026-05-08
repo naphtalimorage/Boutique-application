@@ -1,24 +1,5 @@
-import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react';
-import type { Product } from '@/types';
-
-interface WishlistContextType {
-  items: Product[];
-  addToWishlist: (product: Product) => void;
-  removeFromWishlist: (productId: string) => void;
-  clearWishlist: () => void;
-  isInWishlist: (productId: string) => boolean;
-  toggleWishlist: (product: Product) => void;
-}
-
-const WishlistContext = createContext<WishlistContextType | undefined>(undefined);
-
-export const useWishlist = () => {
-  const context = useContext(WishlistContext);
-  if (!context) {
-    throw new Error('useWishlist must be used within a WishlistProvider');
-  }
-  return context;
-};
+import { useState, useCallback, useEffect, type ReactNode } from 'react';
+import { WishlistContext } from '@/hooks/useWishlist';
 
 export const WishlistProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [items, setItems] = useState<Product[]>(() => {

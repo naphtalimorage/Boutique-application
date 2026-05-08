@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { productsAPI, categoriesAPI, subCategoriesAPI } from '@/services/api';
 import type { Product, Category, SubCategory, SizeVariation, Gender } from '@/types';
-import { useToast } from '@/components/ui/toast';
+import { useToast } from '@/hooks/useToast';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -58,11 +58,7 @@ export default function ProductsPage() {
   const [formErrors, setFormErrors] = useState<FormErrors>({});
   const { success, error: showError } = useToast();
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       const [productsData, categoriesData, subCategoriesData] = await Promise.all([
         productsAPI.getAll(),
@@ -78,7 +74,11 @@ export default function ProductsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [showError]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   const validateForm = (): boolean => {
     const errors: FormErrors = {};

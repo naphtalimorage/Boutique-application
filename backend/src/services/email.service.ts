@@ -133,8 +133,8 @@ class EmailService {
 
       if (error instanceof Error) {
         console.error(`   Error: ${error.message}`);
-        console.error(`   Code: ${(error as any).code}`);
-        console.error(`   Response: ${(error as any).response}`);
+        console.error(`   Code: ${(error as { code?: string }).code}`);
+        console.error(`   Response: ${(error as { response?: string }).response}`);
       } else {
         console.error(`   Error: ${String(error)}`);
       }

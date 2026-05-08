@@ -1,20 +1,5 @@
-import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
-
-interface ThemeContextType {
-  isDark: boolean;
-  toggleTheme: () => void;
-  setTheme: (theme: 'light' | 'dark') => void;
-}
-
-const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
-
-export const useTheme = () => {
-  const context = useContext(ThemeContext);
-  if (!context) {
-    throw new Error('useTheme must be used within a ThemeProvider');
-  }
-  return context;
-};
+import { useState, useEffect, useCallback, type ReactNode } from 'react';
+import { ThemeContext } from '@/hooks/useTheme';
 
 export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [isDark, setIsDark] = useState(() => {

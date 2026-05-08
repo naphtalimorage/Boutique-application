@@ -1,9 +1,9 @@
 import { useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import type { Product } from '@/types';
-import { useCart } from '@/context/CartContext';
+import { useCart } from '@/hooks/useCart';
 import { useWishlist } from '@/context/WishlistContext';
-import { useToast } from '@/components/ui/toast';
+import { useToast } from '@/hooks/useToast';
 import { formatCurrency } from '@/lib/utils';
 import { Heart, ShoppingCart, Star, Zap, Eye } from 'lucide-react';
 

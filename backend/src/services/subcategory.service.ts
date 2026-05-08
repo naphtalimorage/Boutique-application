@@ -1,12 +1,5 @@
 import { supabase } from '../database/supabase.js';
 
-interface SubCategory {
-  id: string;
-  name: string;
-  category_id: string;
-  created_at?: string;
-}
-
 export interface CreateSubCategoryInput {
   name: string;
   categoryId: string;

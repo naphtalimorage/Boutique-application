@@ -86,24 +86,21 @@ export default function HomePage() {
           schema: 'public',
           table: 'products'
         },
-        (payload) => {
+        async (payload) => {
           console.log('🔄 Product change detected:', payload);
           // Re-fetch products to ensure all filters and relationships are applied correctly
-          const fetchUpdatedProducts = async () => {
-            try {
-              const data = await productsAPI.getAll(
-                searchTerm, 
-                selectedCategory || undefined, 
-                selectedGender || undefined,
-                selectedSubCategory || undefined
-              );
-              console.log('✅ Products updated via realtime');
-              setProducts(data || []);
-            } catch (err) {
-              console.error('❌ Realtime update failed:', err);
-            }
-          };
-          fetchUpdatedProducts();
+          try {
+            const data = await productsAPI.getAll(
+              searchTerm, 
+              selectedCategory || undefined, 
+              selectedGender || undefined,
+              selectedSubCategory || undefined
+            );
+            console.log('✅ Products updated via realtime');
+            setProducts(data || []);
+          } catch (err) {
+            console.error('❌ Realtime update failed:', err);
+          }
         }
       )
       .subscribe((status) => {

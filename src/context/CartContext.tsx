@@ -1,36 +1,5 @@
-import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react';
-import type { Product } from '@/types';
-
-export interface CartItem {
-  id: string;
-  product: Product;
-  quantity: number;
-  customPrice?: number; // Override price after bargaining
-  size?: string;        // Selected size
-  color?: string;       // Selected color
-}
-
-interface CartContextType {
-  items: CartItem[];
-  addToCart: (product: Product, quantity?: number, size?: string, color?: string) => void;
-  removeFromCart: (productId: string, size?: string, color?: string) => void;
-  updateQuantity: (productId: string, quantity: number, size?: string, color?: string) => void;
-  updatePrice: (productId: string, price: number) => void;
-  clearCart: () => void;
-  getCartTotal: () => number;
-  getCartCount: () => number;
-  isInCart: (productId: string, size?: string, color?: string) => boolean;
-}
-
-const CartContext = createContext<CartContextType | undefined>(undefined);
-
-export const useCart = () => {
-  const context = useContext(CartContext);
-  if (!context) {
-    throw new Error('useCart must be used within a CartProvider');
-  }
-  return context;
-};
+import { useState, useCallback, useEffect, type ReactNode } from 'react';
+import { CartContext, type CartItem } from '@/hooks/useCart';
 
 export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [items, setItems] = useState<CartItem[]>(() => {
