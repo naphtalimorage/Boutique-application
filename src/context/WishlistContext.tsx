@@ -1,5 +1,8 @@
 import { useState, useCallback, useEffect, type ReactNode } from 'react';
 import { WishlistContext } from '@/hooks/useWishlist';
+import type { Product } from '@/types';
+
+export { useWishlist } from '@/hooks/useWishlist';
 
 export const WishlistProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [items, setItems] = useState<Product[]>(() => {

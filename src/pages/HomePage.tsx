@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { productsAPI, categoriesAPI, subCategoriesAPI } from '@/services/api';
-import { supabase } from '@/lib/supabase';
+import getSupabaseClient from '@/lib/supabase';
 import type { Product, Category, SubCategory, Gender } from '@/types';
 import ProductCard from '@/components/ProductCard';
 import HeroCarousel from '@/components/HeroCarousel';
@@ -76,6 +76,7 @@ export default function HomePage() {
 
   // Set up realtime subscription for products
   useEffect(() => {
+    const supabase = getSupabaseClient();
     console.log('🔗 Setting up realtime subscription for products...');
     const channel = supabase
       .channel('products-changes')
@@ -86,7 +87,7 @@ export default function HomePage() {
           schema: 'public',
           table: 'products'
         },
-        async (payload) => {
+        async (payload: any) => {
           console.log('🔄 Product change detected:', payload);
           // Re-fetch products to ensure all filters and relationships are applied correctly
           try {
@@ -103,7 +104,7 @@ export default function HomePage() {
           }
         }
       )
-      .subscribe((status) => {
+      .subscribe((status: string) => {
         console.log('📡 Supabase subscription status:', status);
       });
 

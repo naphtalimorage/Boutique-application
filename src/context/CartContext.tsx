@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect, type ReactNode } from 'react';
 import { CartContext, type CartItem } from '@/hooks/useCart';
+import type { Product } from '@/types';
 
 export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [items, setItems] = useState<CartItem[]>(() => {

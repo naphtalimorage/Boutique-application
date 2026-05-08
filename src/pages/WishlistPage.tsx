@@ -5,6 +5,7 @@ import { useToast } from '@/hooks/useToast';
 import ProductCard from '@/components/ProductCard';
 import { Button } from '@/components/ui/button';
 import { Heart, ShoppingCart, ArrowLeft, Trash2 } from 'lucide-react';
+import type { Product } from '@/types';
 
 export default function WishlistPage() {
   const { items, removeFromWishlist, clearWishlist } = useWishlist();
@@ -12,7 +13,7 @@ export default function WishlistPage() {
   const { success } = useToast();
 
   const handleAddAllToCart = () => {
-    items.forEach((product) => {
+    items.forEach((product: Product) => {
       if (product.stock > 0) {
         addToCart(product);
       }
@@ -57,7 +58,7 @@ export default function WishlistPage() {
 
       {/* Products Grid */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-        {items.map((product) => (
+        {items.map((product: Product) => (
           <div key={product.id} className="relative">
             <ProductCard product={product} />
             <button
