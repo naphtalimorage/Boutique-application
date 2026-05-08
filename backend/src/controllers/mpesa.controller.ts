@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { darajaService } from '../services/daraja.service.js';
 import { supabase } from '../database/supabase.js';
+import { emailService } from '../services/email.service.js';
 
 interface MpesaProductVariationColor {
   name: string;
@@ -205,7 +206,7 @@ export class MpesaController {
           // Get sale items
           const { data: saleItems } = await supabase
             .from('sale_items')
-            .select('product_id, quantity, size, color')
+            .select('product_id, quantity, size, color, unit_price')
             .eq('sale_id', mpesaTx.sale_id);
 
           if (saleItems) {
@@ -213,7 +214,7 @@ export class MpesaController {
               // Get current product
               const { data: product } = await supabase
                 .from('products')
-                .select('stock, variations')
+                .select('name, price, stock, variations')
                 .eq('id', item.product_id)
                 .single();
 
@@ -271,6 +272,29 @@ export class MpesaController {
                   console.error(`   ❌ Failed to update stock:`, updateError);
                 } else {
                   console.log(`   ✅ Stock updated successfully`);
+                  
+                  // Send email notification for M-Pesa sale
+                  try {
+                    console.log(`📧 Sending M-Pesa sale notification for ${product.name} (Confirmed payment)...`);
+                    await emailService.sendSaleNotification({
+                      productName: product.name,
+                      quantity: item.quantity as number,
+                      totalPrice: (item.quantity as number) * (item.unit_price as number),
+                      unitPrice: item.unit_price as number,
+                      originalPrice: product.price,
+                      timestamp: updateData.transaction_date as string || new Date().toISOString(),
+                      paymentMethod: 'mobile_money',
+                      size: (item as any).size,
+                      color: (item as any).color,
+                      mpesaData: {
+                        mpesaReceiptNumber: updateData.mpesa_receipt_number as string,
+                        phoneNumber: mpesaTx.phone_number,
+                        transactionDate: updateData.transaction_date as string,
+                      },
+                    });
+                  } catch (emailErr) {
+                    console.error('   ❌ Failed to send M-Pesa sale email:', emailErr);
+                  }
                 }
               } else {
                 console.warn(`   ⚠️ Product not found: ${item.product_id}`);

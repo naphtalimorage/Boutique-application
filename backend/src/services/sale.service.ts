@@ -362,30 +362,32 @@ class SaleService {
         console.log(`   Updated variations:`, JSON.stringify(updatedProduct.variations, null, 2));
       }
 
-      // Send email notification for each item
-      try {
-        const originalPrice = validatedItem.product.price;
-        const unitPrice = validatedItem.unitPrice;
+        // For non-M-Pesa payments (like cash), send notification immediately.
+        // For M-Pesa, we wait for the callback in mpesa.controller.ts to confirm payment.
+        if (paymentMethod !== 'mobile_money') {
+          try {
+            const originalPrice = validatedItem.product.price;
+            const unitPrice = validatedItem.unitPrice;
 
-        await emailService.sendSaleNotification({
-          productName: validatedItem.product.name,
-          quantity: validatedItem.quantity,
-          totalPrice: validatedItem.subtotal,
-          unitPrice,
-          originalPrice: originalPrice !== unitPrice ? originalPrice : undefined,
-          timestamp: sale.created_at || new Date().toISOString(),
-          paymentMethod,
-          size: validatedItem.size,           // Add size to email
-          color: validatedItem.color,         // Add color to email
-          mpesaData: input.mpesaData ? {
-            mpesaReceiptNumber: input.mpesaData.mpesaReceiptNumber,
-            phoneNumber: input.mpesaData.phoneNumber,
-            transactionDate: input.mpesaData.transactionDate,
-          } : undefined,
-        });
-      } catch (emailError) {
-        console.error('Failed to send email notification:', emailError);
-      }
+            console.log(`📧 Sending cash sale notification for ${validatedItem.product.name}...`);
+            await emailService.sendSaleNotification({
+              productName: validatedItem.product.name,
+              quantity: validatedItem.quantity,
+              totalPrice: validatedItem.subtotal,
+              unitPrice,
+              originalPrice: originalPrice,
+              timestamp: sale.created_at || new Date().toISOString(),
+              paymentMethod,
+              size: validatedItem.size,           // Add size to email
+              color: validatedItem.color,         // Add color to email
+            });
+            console.log(`✅ Cash sale notification sent for ${validatedItem.product.name}`);
+          } catch (emailError) {
+            console.error(`❌ Failed to send cash sale email notification for ${validatedItem.product.name}:`, emailError);
+          }
+        } else {
+          console.log(`ℹ️ Skipping immediate email for M-Pesa sale ${sale.id} item ${validatedItem.product.name}. Notification will be sent upon M-Pesa payment confirmation.`);
+        }
     }
 
     // Fetch complete sale with items

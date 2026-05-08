@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { productsAPI, categoriesAPI, subCategoriesAPI } from '@/services/api';
+import { supabase } from '@/lib/supabase';
 import type { Product, Category, SubCategory, Gender } from '@/types';
 import ProductCard from '@/components/ProductCard';
 import HeroCarousel from '@/components/HeroCarousel';
@@ -71,6 +72,48 @@ export default function HomePage() {
 
     const timeoutId = setTimeout(fetchProducts, 300);
     return () => clearTimeout(timeoutId);
+  }, [searchTerm, selectedCategory, selectedGender, selectedSubCategory]);
+
+  // Set up realtime subscription for products
+  useEffect(() => {
+    console.log('🔗 Setting up realtime subscription for products...');
+    const channel = supabase
+      .channel('products-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*', // Listen to INSERT, UPDATE, and DELETE
+          schema: 'public',
+          table: 'products'
+        },
+        (payload) => {
+          console.log('🔄 Product change detected:', payload);
+          // Re-fetch products to ensure all filters and relationships are applied correctly
+          const fetchUpdatedProducts = async () => {
+            try {
+              const data = await productsAPI.getAll(
+                searchTerm, 
+                selectedCategory || undefined, 
+                selectedGender || undefined,
+                selectedSubCategory || undefined
+              );
+              console.log('✅ Products updated via realtime');
+              setProducts(data || []);
+            } catch (err) {
+              console.error('❌ Realtime update failed:', err);
+            }
+          };
+          fetchUpdatedProducts();
+        }
+      )
+      .subscribe((status) => {
+        console.log('📡 Supabase subscription status:', status);
+      });
+
+    return () => {
+      console.log('🔌 Cleaning up realtime subscription');
+      supabase.removeChannel(channel);
+    };
   }, [searchTerm, selectedCategory, selectedGender, selectedSubCategory]);
 
   useEffect(() => {

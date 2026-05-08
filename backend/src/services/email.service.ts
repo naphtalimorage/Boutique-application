@@ -47,6 +47,12 @@ class EmailService {
     const ownerEmail = process.env.OWNER_EMAIL;
     if (!ownerEmail) {
       console.warn('⚠️ OWNER_EMAIL not configured, skipping email notification');
+      console.log('  → Process Env:', {
+        SMTP_HOST: process.env.SMTP_HOST,
+        SMTP_USER: process.env.SMTP_USER,
+        OWNER_EMAIL: process.env.OWNER_EMAIL,
+        EMAIL_FROM: process.env.EMAIL_FROM
+      });
       return;
     }
 
@@ -84,7 +90,7 @@ class EmailService {
     const priceDetails = input.originalPrice && input.originalPrice !== input.unitPrice
       ? `
           <p style="margin: 10px 0;"><strong>Original Price:</strong> Ksh ${input.originalPrice.toLocaleString('en-KE')}</p>
-          <p style="margin: 10px 0;"><strong>Selling Price:</strong> Ksh ${input.unitPrice.toLocaleString('en-KE')} ${input.unitPrice < input.originalPrice ? '<span style="color: #16a34a; font-weight: bold;">(Bargained)</span>' : ''}</p>
+          <p style="margin: 10px 0;"><strong>Selling Price:</strong> Ksh ${input.unitPrice.toLocaleString('en-KE')} <span style="color: #16a34a; font-weight: bold;">(Bargained)</span></p>
           <p style="margin: 10px 0;"><strong>Quantity Sold:</strong> ${input.quantity}</p>
           <p style="margin: 10px 0; font-size: 24px; font-weight: bold; color: #e94560;"><strong>Total Amount:</strong> Ksh ${input.totalPrice.toLocaleString('en-KE')}</p>
         `
