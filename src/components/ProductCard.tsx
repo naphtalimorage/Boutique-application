@@ -70,6 +70,9 @@ export default function ProductCard({ product }: ProductCardProps) {
     navigate(`/product/${product.id}`);
   };
 
+  const imgUrl = product.imageUrl || product.image_url;
+  const hasImage = imgUrl && typeof imgUrl === 'string' && imgUrl.length > 10 && imgUrl.startsWith('http');
+
   return (
     <div
       className="group relative bg-white rounded-lg overflow-hidden border border-gray-100 hover:border-primary/30 transition-all duration-300 hover:shadow-[0_4px_20px_rgba(0,0,0,0.08)]"
@@ -78,39 +81,31 @@ export default function ProductCard({ product }: ProductCardProps) {
     >
       {/* Image Container */}
       <Link to={`/product/${product.id}`} className="relative block aspect-square overflow-hidden bg-white">
-        {(() => {
-          const imgUrl = product.imageUrl || product.image_url;
-          const hasImage = imgUrl && typeof imgUrl === 'string' && imgUrl.length > 10 && imgUrl.startsWith('http');
-
-          if (hasImage) {
-            return (
-              <img
-                key={imgUrl}
-                src={imgUrl}
-                alt={product.name}
-                className="w-full h-full object-contain p-3 transition-transform duration-500 group-hover:scale-105"
-                loading="lazy"
-                crossOrigin="anonymous"
-                onError={(e) => {
-                  const img = e.target as HTMLImageElement;
-                  if (!img.dataset.fallback) {
-                    img.dataset.fallback = 'true';
-                    img.src = '/placeholder-product.svg';
-                    img.className = 'w-full h-full object-contain p-4';
-                  }
-                }}
-              />
-            );
-          }
-          return (
-            <img
-              src="/placeholder-product.svg"
-              alt={product.name}
-              className="w-full h-full object-contain p-4"
-              loading="lazy"
-            />
-          );
-        })()}
+        {hasImage ? (
+          <img
+            key={imgUrl}
+            src={imgUrl}
+            alt={product.name}
+            className="w-full h-full object-contain p-3 transition-transform duration-500 group-hover:scale-105"
+            loading="lazy"
+            crossOrigin="anonymous"
+            onError={(e) => {
+              const img = e.target as HTMLImageElement;
+              if (!img.dataset.fallback) {
+                img.dataset.fallback = 'true';
+                img.src = '/placeholder-product.svg';
+                img.className = 'w-full h-full object-contain p-4';
+              }
+            }}
+          />
+        ) : (
+          <img
+            src="/placeholder-product.svg"
+            alt={product.name}
+            className="w-full h-full object-contain p-4"
+            loading="lazy"
+          />
+        )}
 
         {/* Badges */}
         <div className="absolute top-0 left-0 flex flex-col gap-1 p-2">

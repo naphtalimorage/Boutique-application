@@ -106,33 +106,8 @@ export default function ProductDetailPage() {
     return () => window.removeEventListener('focus', handleFocus);
   }, [id, navigate]);
 
-  if (loading) {
-    return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
-          <div className="skeleton aspect-square rounded-lg" />
-          <div className="space-y-4">
-            <div className="skeleton h-8 w-3/4 rounded" />
-            <div className="skeleton h-4 w-1/2 rounded" />
-            <div className="skeleton h-12 w-1/3 rounded" />
-            <div className="skeleton h-24 w-full rounded" />
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (!product) {
-    return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16 text-center">
-        <Package className="h-12 w-12 md:h-16 md:w-16 mx-auto text-muted-foreground mb-4" />
-        <h2 className="text-xl md:text-2xl font-bold mb-2">Product not found</h2>
-        <Link to="/" className="text-primary hover:underline">← Back to shop</Link>
-      </div>
-    );
-  }
-
   const handleAddToCart = () => {
+    if (!product) return;
     // If product has variations, require size and color selection
     if (product.variations && product.variations.length > 0) {
       if (!selectedSize) {
@@ -176,8 +151,8 @@ export default function ProductDetailPage() {
     }
   };
 
-  const ratings = Array.from(product.id).reduce((sum, char) => sum + char.charCodeAt(0), 0) % 200 + 50;
-  const soldCount = Array.from(product.id).reduce((sum, char) => sum + char.charCodeAt(0) * 2, 0) % 500 + 100;
+  const ratings = product ? Array.from(product.id).reduce((sum, char) => sum + char.charCodeAt(0), 0) % 200 + 50 : 0;
+  const soldCount = product ? Array.from(product.id).reduce((sum, char) => sum + char.charCodeAt(0) * 2, 0) % 500 + 100 : 0;
 
   const handleBuyNow = () => {
     handleAddToCart();
@@ -189,13 +164,13 @@ export default function ProductDetailPage() {
       ? variation.colors.reduce((sum: number, color: ColorVariation) => sum + (color.stock || 0), 0)
       : variation.stock || 0;
 
-  const availableStock = product.variations && product.variations.length > 0
+  const availableStock = product?.variations && product.variations.length > 0
     ? product.variations.reduce((sum, variation) => sum + getVariationStock(variation), 0)
-    : product.stock;
+    : product?.stock || 0;
 
-  const availableVariations = product.variations?.filter((variation) => getVariationStock(variation) > 0) ?? [];
+  const availableVariations = product?.variations?.filter((variation) => getVariationStock(variation) > 0) ?? [];
   const selectedVariation = selectedSize
-    ? product.variations?.find((variation) => variation.size === selectedSize)
+    ? product?.variations?.find((variation) => variation.size === selectedSize)
     : undefined;
   
   // Real-time stock update effect to handle variation depletion
@@ -212,15 +187,41 @@ export default function ProductDetailPage() {
         }
       }
     }
-  }, [product.variations, selectedSize, selectedVariation, selectedColor]);
+  }, [product?.variations, selectedSize, selectedVariation, selectedColor]);
 
   const selectedColorOption = selectedVariation?.colors?.find((color) => color.name === selectedColor);
 
   const selectedVariationStock = selectedVariation ? getVariationStock(selectedVariation) : 0;
   const selectedColorStock = selectedColorOption?.stock ?? 0;
 
-  const discount = product.id.charCodeAt(0) % 15 + 10;
-  const originalPrice = Math.round(product.price * (1 + discount / 100));
+  const discount = product ? product.id.charCodeAt(0) % 15 + 10 : 0;
+  const originalPrice = product ? Math.round(product.price * (1 + discount / 100)) : 0;
+
+  if (loading) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
+          <div className="skeleton aspect-square rounded-lg" />
+          <div className="space-y-4">
+            <div className="skeleton h-8 w-3/4 rounded" />
+            <div className="skeleton h-4 w-1/2 rounded" />
+            <div className="skeleton h-12 w-1/3 rounded" />
+            <div className="skeleton h-24 w-full rounded" />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!product) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16 text-center">
+        <Package className="h-12 w-12 md:h-16 md:w-16 mx-auto text-muted-foreground mb-4" />
+        <h2 className="text-xl md:text-2xl font-bold mb-2">Product not found</h2>
+        <Link to="/" className="text-primary hover:underline">← Back to shop</Link>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-card">

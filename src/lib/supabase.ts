@@ -6,7 +6,14 @@ export const getSupabaseClient = (): SupabaseClient => {
   if (!supabase) {
     supabase = createClient(
       import.meta.env.VITE_SUPABASE_URL || 'https://ztouzjhajzfdezshuglx.supabase.co',
-      import.meta.env.VITE_SUPABASE_ANON_KEY || ''
+      import.meta.env.VITE_SUPABASE_ANON_KEY || '',
+      {
+        realtime: {
+          params: {
+            eventsPerSecond: 10
+          }
+        }
+      }
     );
   }
   return supabase;
