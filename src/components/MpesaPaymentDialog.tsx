@@ -37,7 +37,7 @@ export default function MpesaPaymentDialog({
   const [step, setStep] = useState<'initiate' | 'pending' | 'success' | 'error'>('initiate');
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
-  const [countdown, setCountdown] = useState(120);
+  const [countdown, setCountdown] = useState(180);
   const [localPhone, setLocalPhone] = useState(phoneNumber);
 
   const API_URL = import.meta.env.VITE_API_URL || 'https://boutique-application.onrender.com/api';
@@ -53,7 +53,7 @@ export default function MpesaPaymentDialog({
       setStep('initiate');
       setLoading(false);
       setErrorMessage('');
-      setCountdown(120);
+      setCountdown(180);
       setLocalPhone(phoneNumber);
     }
   }, [open, phoneNumber]);
@@ -79,7 +79,7 @@ export default function MpesaPaymentDialog({
 
   // Poll for payment status via sale
   const pollPaymentStatus = useCallback(async (checkoutReqId: string) => {
-    const maxAttempts = 40; // 120 seconds at 3s intervals
+    const maxAttempts = 60; // 180 seconds total at 3s intervals
     let attempts = 0;
 
     const poll = async () => {
@@ -115,10 +115,12 @@ export default function MpesaPaymentDialog({
 
         // Still pending
         if (attempts < maxAttempts) {
-          setTimeout(poll, 3000);
+          // Increase interval slightly after 30 seconds to be more efficient
+          const interval = attempts > 10 ? 4000 : 3000;
+          setTimeout(poll, interval);
         } else {
           setStep('error');
-          setErrorMessage('Payment timed out. Please check your M-Pesa messages.');
+          setErrorMessage('Payment verification timed out. If you have paid, please contact support with your M-Pesa receipt.');
         }
       } catch {
         if (attempts < maxAttempts) {
@@ -132,7 +134,7 @@ export default function MpesaPaymentDialog({
 
     // Start polling after 5 seconds (give user time to respond to STK)
     setTimeout(poll, 5000);
-  }, [API_URL, onSuccess]);
+  }, [API_URL, onSuccess, getToken]);
 
   const handleInitiatePayment = async () => {
     const phoneToUse = localPhone || phoneNumber;

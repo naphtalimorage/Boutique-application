@@ -321,7 +321,7 @@ export class MpesaController {
     try {
       const { checkoutRequestId } = req.params;
 
-      const { data: mpesaTx } = await supabase
+      let { data: mpesaTx } = await supabase
         .from('mpesa_transactions')
         .select(`
           *,
@@ -338,6 +338,83 @@ export class MpesaController {
 
       if (!mpesaTx) {
         return res.status(404).json({ error: 'Transaction not found' });
+      }
+
+      // If still pending, try to query Safaricom for status as a fallback
+      // This helps if the callback was delayed or lost
+      if (mpesaTx.status === 'pending') {
+        const timeSinceCreation = (new Date().getTime() - new Date(mpesaTx.created_at).getTime()) / 1000;
+        
+        // Only query Safaricom if at least 15 seconds have passed since initiation
+        // to avoid unnecessary API calls when the user is likely still typing their PIN
+        if (timeSinceCreation > 15) {
+          try {
+            console.log(`🔍 Transaction ${checkoutRequestId} is still pending after ${Math.round(timeSinceCreation)}s. Querying Safaricom...`);
+            const statusResult = await darajaService.querySTKStatus(checkoutRequestId);
+            
+            // ResultCode 0 means successful payment
+            // Any other code means failure (or still pending if we get a specific response)
+            // But usually Safaricom returns 1032 for cancelled, 1 for insufficient funds etc.
+            if (statusResult.ResultCode !== '0' && statusResult.ResultCode !== undefined) {
+              console.log(`❌ Safaricom query returned failure: ${statusResult.ResultDesc} (${statusResult.ResultCode})`);
+              
+              // Update local database to reflect failure
+              const updateData = {
+                status: 'failed',
+                result_code: statusResult.ResultCode,
+                result_desc: statusResult.ResultDesc,
+              };
+
+              await supabase.from('mpesa_transactions').update(updateData).eq('id', mpesaTx.id);
+              
+              if (mpesaTx.sale_id) {
+                await supabase.from('sales').update({ 
+                  status: 'failed', 
+                  payment_status: 'failed',
+                  result_desc: statusResult.ResultDesc
+                }).eq('id', mpesaTx.sale_id);
+              }
+
+              // Refresh local data
+              mpesaTx.status = 'failed';
+              mpesaTx.result_code = statusResult.ResultCode;
+              mpesaTx.result_desc = statusResult.ResultDesc;
+            } else if (statusResult.ResultCode === '0') {
+              // If Safaricom says it's successful but our callback hasn't arrived
+              console.log(`✅ Safaricom query returned SUCCESS for ${checkoutRequestId}.`);
+              
+              // We can proactively update the status to 'completed' here.
+              // Note: querySTKStatus for successful transactions doesn't usually return the MpesaReceiptNumber.
+              // But we can set a placeholder or wait for the callback.
+              // To improve UX and stop the "processing" screen, let's mark it as completed.
+              
+              const updateData: any = {
+                status: 'completed',
+                result_code: '0',
+                result_desc: 'The service request is processed successfully.'
+              };
+
+              await supabase.from('mpesa_transactions').update(updateData).eq('id', mpesaTx.id);
+              
+              if (mpesaTx.sale_id) {
+                await supabase.from('sales').update({ 
+                  status: 'paid', 
+                  payment_status: 'completed',
+                  mpesa_checkout_request_id: checkoutRequestId
+                }).eq('id', mpesaTx.sale_id);
+              }
+
+              // Refresh local data for response
+              mpesaTx.status = 'completed';
+              if (mpesaTx.sales) {
+                mpesaTx.sales.status = 'paid';
+                mpesaTx.sales.payment_status = 'completed';
+              }
+            }
+          } catch (queryError) {
+            console.error('Failed to query STK status from Safaricom:', getErrorMessage(queryError));
+          }
+        }
       }
 
       res.status(200).json({

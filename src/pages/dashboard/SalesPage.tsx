@@ -48,6 +48,8 @@ export default function SalesPage() {
   
   const { success, error: showError } = useToast();
 
+  const [cashStep, setCashStep] = useState<'confirm' | 'processing' | 'success'>('confirm');
+
   const fetchData = useCallback(async () => {
     try {
       const [salesData, productsData] = await Promise.all([
@@ -218,22 +220,35 @@ export default function SalesPage() {
     }
 
     setSubmitting(true);
+    if (paymentMethod === 'cash') {
+      setCashStep('processing');
+    }
+
     try {
+      if (paymentMethod === 'cash') {
+        // Artificial delay for UX
+        await new Promise(resolve => setTimeout(resolve, 1200));
+      }
+
       await salesAPI.createMulti({
         items: cart,
         paymentMethod,
       });
-      success(`Sale completed! ${paymentMethod === 'mobile_money' ? 'STK push sent.' : 'Cash payment received.'}`);
-      setDialogOpen(false);
-      setShowPaymentConfirmation(false);
-      clearCart();
-      // Refresh both sales and products to show updated stock
-      fetchData();
+
+      if (paymentMethod === 'cash') {
+        setCashStep('success');
+      } else {
+        success('STK push sent.');
+        setDialogOpen(false);
+        clearCart();
+        fetchData();
+        setSubmitting(false);
+      }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Failed to record sale';
       showError(message);
-    } finally {
       setSubmitting(false);
+      setCashStep('confirm');
     }
   };
 
@@ -592,103 +607,161 @@ export default function SalesPage() {
             </>
           ) : (
             <div className="space-y-6">
-              {/* Payment Method Selection */}
-              <div className="space-y-4">
-                <Label>Select Payment Method</Label>
-                <div className="grid grid-cols-2 gap-4">
-                  <button
-                    type="button"
-                    onClick={() => setPaymentMethod('cash')}
-                    className={`flex items-center gap-3 p-4 rounded-lg border-2 transition-all ${
-                      paymentMethod === 'cash'
-                        ? 'border-primary bg-primary/5'
-                        : 'border-gray-200 hover:border-gray-300'
-                    }`}
-                  >
-                    <Banknote className={`h-6 w-6 ${paymentMethod === 'cash' ? 'text-primary' : 'text-muted-foreground'}`} />
-                    <div className="text-left">
-                      <p className="font-semibold">Cash</p>
-                      <p className="text-sm text-muted-foreground">Customer paid with cash</p>
+              {paymentMethod === 'cash' && cashStep !== 'confirm' ? (
+                <div className="py-8">
+                  {cashStep === 'processing' && (
+                    <div className="text-center space-y-6">
+                      <div className="relative w-24 h-24 mx-auto">
+                        <div className="absolute inset-0 bg-primary/20 rounded-full animate-ping opacity-75" />
+                        <div className="relative w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center border-4 border-primary/20">
+                          <Loader2 className="h-10 w-10 text-primary animate-spin" />
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <h4 className="text-xl font-bold">Processing Cash Payment</h4>
+                        <p className="text-muted-foreground">Updating records and stock...</p>
+                      </div>
                     </div>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setPaymentMethod('mobile_money')}
-                    className={`flex items-center gap-3 p-4 rounded-lg border-2 transition-all ${
-                      paymentMethod === 'mobile_money'
-                        ? 'border-primary bg-primary/5'
-                        : 'border-gray-200 hover:border-gray-300'
-                    }`}
-                  >
-                    <Phone className={`h-6 w-6 ${paymentMethod === 'mobile_money' ? 'text-primary' : 'text-muted-foreground'}`} />
-                    <div className="text-left">
-                      <p className="font-semibold">Mobile Money</p>
-                      <p className="text-sm text-muted-foreground">STK push to customer phone</p>
-                    </div>
-                  </button>
-                </div>
-              </div>
-
-              {/* Mobile Money Number */}
-              {paymentMethod === 'mobile_money' && (
-                <div className="space-y-2">
-                  <Label htmlFor="mobileNumber">Mobile Number</Label>
-                  <Input
-                    id="mobileNumber"
-                    placeholder="e.g., 0541234567"
-                    value={mobileNumber}
-                    onChange={(e) => setMobileNumber(e.target.value)}
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    An STK push will be sent to this number
-                  </p>
-                </div>
-              )}
-
-              {/* Order Summary */}
-              <div className="bg-muted rounded-lg p-4 space-y-2">
-                <h4 className="font-semibold">Order Summary</h4>
-                {cart.map((item) => {
-                  const product = products.find((p) => p.id === item.productId);
-                  if (!product) return null;
-                  return (
-                    <div key={item.productId} className="flex justify-between text-sm">
-                      <span>{product.name} × {item.quantity}</span>
-                      <span>{formatCurrency(product.price * item.quantity)}</span>
-                    </div>
-                  );
-                })}
-                <div className="border-t pt-2 flex justify-between font-bold">
-                  <span>Total</span>
-                  <span className="text-primary">{formatCurrency(getTotal())}</span>
-                </div>
-              </div>
-
-              <DialogFooter className="gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setShowPaymentConfirmation(false)}
-                >
-                  Back to Cart
-                </Button>
-                <Button
-                  onClick={handleCompleteSale}
-                  disabled={submitting || (paymentMethod === 'mobile_money' && !mobileNumber)}
-                >
-                  {submitting ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Processing...
-                    </>
-                  ) : (
-                    <>
-                      <CheckCircle className="mr-2 h-4 w-4" />
-                      {paymentMethod === 'mobile_money' ? 'Send STK Push & Complete' : 'Confirm Payment & Complete'}
-                    </>
                   )}
-                </Button>
-              </DialogFooter>
+
+                  {cashStep === 'success' && (
+                    <div className="text-center space-y-6">
+                      <div className="w-20 h-20 bg-success/20 rounded-full flex items-center justify-center mx-auto scale-110">
+                        <CheckCircle className="h-10 w-10 text-success" />
+                      </div>
+                      <div className="space-y-2">
+                        <h4 className="text-2xl font-bold text-success">Payment Confirmed!</h4>
+                        <p className="text-muted-foreground">Sale recorded successfully.</p>
+                      </div>
+
+                      <div className="bg-muted rounded-lg p-4 space-y-3 max-w-sm mx-auto">
+                        <div className="flex justify-between text-sm">
+                          <span className="text-muted-foreground">Total Paid</span>
+                          <span className="font-bold">{formatCurrency(getTotal())}</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-muted-foreground">Method</span>
+                          <span className="font-bold">Cash</span>
+                        </div>
+                      </div>
+
+                      <Button 
+                        className="w-full"
+                        onClick={() => {
+                          setDialogOpen(false);
+                          setShowPaymentConfirmation(false);
+                          clearCart();
+                          fetchData();
+                          setCashStep('confirm');
+                          setSubmitting(false);
+                        }}
+                      >
+                        Close
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <>
+                  {/* Payment Method Selection */}
+                  <div className="space-y-4">
+                    <Label>Select Payment Method</Label>
+                    <div className="grid grid-cols-2 gap-4">
+                      <button
+                        type="button"
+                        onClick={() => setPaymentMethod('cash')}
+                        className={`flex items-center gap-3 p-4 rounded-lg border-2 transition-all ${
+                          paymentMethod === 'cash'
+                            ? 'border-primary bg-primary/5'
+                            : 'border-gray-200 hover:border-gray-300'
+                        }`}
+                      >
+                        <Banknote className={`h-6 w-6 ${paymentMethod === 'cash' ? 'text-primary' : 'text-muted-foreground'}`} />
+                        <div className="text-left">
+                          <p className="font-semibold">Cash</p>
+                          <p className="text-sm text-muted-foreground">Customer paid with cash</p>
+                        </div>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setPaymentMethod('mobile_money')}
+                        className={`flex items-center gap-3 p-4 rounded-lg border-2 transition-all ${
+                          paymentMethod === 'mobile_money'
+                            ? 'border-primary bg-primary/5'
+                            : 'border-gray-200 hover:border-gray-300'
+                        }`}
+                      >
+                        <Phone className={`h-6 w-6 ${paymentMethod === 'mobile_money' ? 'text-primary' : 'text-muted-foreground'}`} />
+                        <div className="text-left">
+                          <p className="font-semibold">Mobile Money</p>
+                          <p className="text-sm text-muted-foreground">STK push to customer phone</p>
+                        </div>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Mobile Money Number */}
+                  {paymentMethod === 'mobile_money' && (
+                    <div className="space-y-2">
+                      <Label htmlFor="mobileNumber">Mobile Number</Label>
+                      <Input
+                        id="mobileNumber"
+                        placeholder="e.g., 0541234567"
+                        value={mobileNumber}
+                        onChange={(e) => setMobileNumber(e.target.value)}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        An STK push will be sent to this number
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Order Summary */}
+                  <div className="bg-muted rounded-lg p-4 space-y-2">
+                    <h4 className="font-semibold">Order Summary</h4>
+                    {cart.map((item) => {
+                      const product = products.find((p) => p.id === item.productId);
+                      if (!product) return null;
+                      return (
+                        <div key={item.productId} className="flex justify-between text-sm">
+                          <span>{product.name} × {item.quantity}</span>
+                          <span>{formatCurrency(product.price * item.quantity)}</span>
+                        </div>
+                      );
+                    })}
+                    <div className="border-t pt-2 flex justify-between font-bold">
+                      <span>Total</span>
+                      <span className="text-primary">{formatCurrency(getTotal())}</span>
+                    </div>
+                  </div>
+
+                  <DialogFooter className="gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setShowPaymentConfirmation(false)}
+                    >
+                      Back to Cart
+                    </Button>
+                    <Button
+                      onClick={handleCompleteSale}
+                      disabled={submitting || (paymentMethod === 'mobile_money' && !mobileNumber)}
+                    >
+                      {submitting ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Processing...
+                        </>
+                      ) : (
+                        <>
+                          <CheckCircle className="mr-2 h-4 w-4" />
+                          {paymentMethod === 'mobile_money' ? 'Send STK Push & Complete' : 'Confirm Payment & Complete'}
+                        </>
+                      )}
+                    </Button>
+                  </DialogFooter>
+                </>
+              )}
             </div>
           )}
         </DialogContent>

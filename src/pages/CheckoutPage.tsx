@@ -18,6 +18,8 @@ export default function CheckoutPage() {
   const [submitting, setSubmitting] = useState(false);
   const [selectingMethod, setSelectingMethod] = useState(false);
 
+  const [cashStep, setCashStep] = useState<'confirm' | 'processing' | 'success'>('confirm');
+
   const total = getCartTotal();
 
   if (items.length === 0) {
@@ -61,13 +63,17 @@ export default function CheckoutPage() {
         throw new Error(error.error || 'Failed to complete sale');
       }
 
-      success('Sale completed successfully!');
-      clearCart();
-      
-      // Small delay to ensure user sees success toast before navigation
-      setTimeout(() => {
-        navigate('/dashboard/sales', { replace: true });
-      }, 500);
+      if (paymentMethod === 'cash') {
+        setCashStep('success');
+      } else {
+        success('Sale completed successfully!');
+        clearCart();
+        
+        // Small delay to ensure user sees success toast before navigation
+        setTimeout(() => {
+          navigate('/dashboard/sales', { replace: true });
+        }, 500);
+      }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Failed to complete sale';
       showError(message);
@@ -84,13 +90,18 @@ export default function CheckoutPage() {
     showError(error);
   };
 
-  const handleCashPayment = () => {
-    // Set submitting immediately to disable button and show loading
+  const handleCashPayment = async () => {
     setSubmitting(true);
-    // Small delay to ensure UI updates before async call
-    setTimeout(() => {
-      handleCompleteSale();
-    }, 50);
+    setCashStep('processing');
+    
+    try {
+      // Artificial delay to show "Processing" state for UX
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      await handleCompleteSale();
+    } catch (err) {
+      setCashStep('confirm');
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -279,80 +290,132 @@ export default function CheckoutPage() {
 
               {step === 2 && paymentMethod === 'cash' && (
                 <div className="space-y-4 md:space-y-6">
-                  <h2 className="text-lg md:text-xl font-bold">Confirm Cash Payment</h2>
+                  {cashStep === 'confirm' && (
+                    <>
+                      <h2 className="text-lg md:text-xl font-bold">Confirm Cash Payment</h2>
 
-                  {/* Payment Summary */}
-                  <div className="bg-muted rounded-lg p-3 md:p-4 space-y-2 md:space-y-3">
-                    <div className="flex items-center gap-2">
-                      <Wallet className="h-4 w-4 md:h-5 md:w-5 text-primary" />
-                      <h3 className="font-semibold text-sm md:text-base">💵 Cash Payment</h3>
-                    </div>
-                    <p className="text-xs md:text-sm text-muted-foreground">
-                      Confirm that you have received cash payment from the customer
-                    </p>
-                  </div>
-
-                  {/* Items */}
-                  <div className="space-y-2">
-                    <h3 className="text-xs md:text-sm font-semibold text-muted-foreground">
-                      ORDER ITEMS ({items.length})
-                    </h3>
-                    {items.map((item) => {
-                    const unitPrice = item.customPrice !== undefined ? item.customPrice : item.product.price;
-                    const subtotal = unitPrice * item.quantity;
-
-                    return (
-                      <div
-                        key={item.id}
-                        className="flex flex-col gap-1 text-xs md:text-sm py-2 border-b border-border"
-                      >
-                        <div className="flex justify-between items-center">
-                          <span className="truncate flex-1">
-                            {item.product.name} × {item.quantity}
-                          </span>
-                          <span className="font-medium ml-2 md:ml-4">
-                            {formatCurrency(subtotal)}
-                          </span>
+                      {/* Payment Summary */}
+                      <div className="bg-muted rounded-lg p-3 md:p-4 space-y-2 md:space-y-3">
+                        <div className="flex items-center gap-2">
+                          <Wallet className="h-4 w-4 md:h-5 md:w-5 text-primary" />
+                          <h3 className="font-semibold text-sm md:text-base">💵 Cash Payment</h3>
                         </div>
-                        {item.customPrice !== undefined && item.customPrice !== item.product.price ? (
-                          <div className="text-[11px] text-muted-foreground">
-                            Sold at {formatCurrency(unitPrice)} each (original {formatCurrency(item.product.price)})
-                          </div>
-                        ) : null}
+                        <p className="text-xs md:text-sm text-muted-foreground">
+                          Confirm that you have received cash payment from the customer
+                        </p>
                       </div>
-                    );
-                  })}
-                  </div>
 
-                  <div className="flex flex-col sm:flex-row gap-2 md:gap-3">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => setStep(1)}
-                      disabled={submitting}
-                      className="flex-1 min-h-[44px]"
-                    >
-                      Back
-                    </Button>
-                    <Button
-                      onClick={handleCashPayment}
-                      disabled={submitting}
-                      className="flex-1 bg-success hover:bg-success/90 text-white min-h-[44px]"
-                      size="lg"
-                    >
-                      {submitting ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Processing...
-                        </>
-                      ) : (
-                        <>
-                          <CheckCircle className="mr-2 h-4 w-4" />
-                          <span className="truncate">Confirm Payment - {formatCurrency(total)}</span>
-                        </>
-                      )}
-                    </Button>
-                  </div>
+                      {/* Items */}
+                      <div className="space-y-2">
+                        <h3 className="text-xs md:text-sm font-semibold text-muted-foreground">
+                          ORDER ITEMS ({items.length})
+                        </h3>
+                        {items.map((item) => {
+                        const unitPrice = item.customPrice !== undefined ? item.customPrice : item.product.price;
+                        const subtotal = unitPrice * item.quantity;
+
+                        return (
+                          <div
+                            key={item.id}
+                            className="flex flex-col gap-1 text-xs md:text-sm py-2 border-b border-border"
+                          >
+                            <div className="flex justify-between items-center">
+                              <span className="truncate flex-1">
+                                {item.product.name} × {item.quantity}
+                              </span>
+                              <span className="font-medium ml-2 md:ml-4">
+                                {formatCurrency(subtotal)}
+                              </span>
+                            </div>
+                            {item.customPrice !== undefined && item.customPrice !== item.product.price ? (
+                              <div className="text-[11px] text-muted-foreground">
+                                Sold at {formatCurrency(unitPrice)} each (original {formatCurrency(item.product.price)})
+                              </div>
+                            ) : null}
+                          </div>
+                        );
+                      })}
+                      </div>
+
+                      <div className="flex flex-col sm:flex-row gap-2 md:gap-3">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => setStep(1)}
+                          disabled={submitting}
+                          className="flex-1 min-h-[44px]"
+                        >
+                          Back
+                        </Button>
+                        <Button
+                          onClick={handleCashPayment}
+                          disabled={submitting}
+                          className="flex-1 bg-success hover:bg-success/90 text-white min-h-[44px]"
+                          size="lg"
+                        >
+                          {submitting ? (
+                            <>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              Processing...
+                            </>
+                          ) : (
+                            <>
+                              <CheckCircle className="mr-2 h-4 w-4" />
+                              <span className="truncate">Confirm Payment - {formatCurrency(total)}</span>
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    </>
+                  )}
+
+                  {cashStep === 'processing' && (
+                    <div className="text-center py-12 space-y-6">
+                      <div className="relative w-24 h-24 mx-auto">
+                        <div className="absolute inset-0 bg-primary/20 rounded-full animate-ping opacity-75" />
+                        <div className="relative w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center border-4 border-primary/20">
+                          <Loader2 className="h-10 w-10 text-primary animate-spin" />
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <h4 className="text-xl font-bold">Processing Cash Payment</h4>
+                        <p className="text-muted-foreground">Saving transaction and updating stock...</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {cashStep === 'success' && (
+                    <div className="text-center py-8 space-y-6">
+                      <div className="w-20 h-20 bg-success/20 rounded-full flex items-center justify-center mx-auto scale-110">
+                        <CheckCircle className="h-10 w-10 text-success" />
+                      </div>
+                      <div className="space-y-2">
+                        <h4 className="text-2xl font-bold text-success">Payment Confirmed!</h4>
+                        <p className="text-muted-foreground">The sale has been recorded successfully.</p>
+                      </div>
+
+                      <div className="bg-muted rounded-lg p-4 space-y-3 max-w-sm mx-auto">
+                        <div className="flex justify-between text-sm">
+                          <span className="text-muted-foreground">Amount Received</span>
+                          <span className="font-bold">{formatCurrency(total)}</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-muted-foreground">Payment Method</span>
+                          <span className="font-bold">Cash</span>
+                        </div>
+                      </div>
+
+                      <Button 
+                        className="w-full bg-primary hover:bg-primary/90 text-white h-12 text-lg"
+                        onClick={() => {
+                          clearCart();
+                          navigate('/dashboard/sales', { replace: true });
+                        }}
+                      >
+                        Go to Sales Dashboard
+                      </Button>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
