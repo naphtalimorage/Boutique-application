@@ -78,39 +78,47 @@ export default function HomePage() {
   useEffect(() => {
     const supabase = getSupabaseClient();
     console.log('🔗 Setting up realtime subscription for products...');
-    const channel = supabase
-      .channel('products-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*', // Listen to INSERT, UPDATE, and DELETE
-          schema: 'public',
-          table: 'products'
-        },
-        async (payload: any) => {
-          console.log('🔄 Product change detected:', payload);
-          // Re-fetch products to ensure all filters and relationships are applied correctly
-          try {
-            const data = await productsAPI.getAll(
-              searchTerm, 
-              selectedCategory || undefined, 
-              selectedGender || undefined,
-              selectedSubCategory || undefined
-            );
-            console.log('✅ Products updated via realtime');
-            setProducts(data || []);
-          } catch (err) {
-            console.error('❌ Realtime update failed:', err);
+    let channel: any;
+
+    const setupSubscription = () => {
+      channel = supabase
+        .channel('products-changes')
+        .on(
+          'postgres_changes',
+          {
+            event: '*', // Listen to INSERT, UPDATE, and DELETE
+            schema: 'public',
+            table: 'products'
+          },
+          async (payload: any) => {
+            console.log('🔄 Product change detected:', payload);
+            // Re-fetch products to ensure all filters and relationships are applied correctly
+            try {
+              const data = await productsAPI.getAll(
+                searchTerm, 
+                selectedCategory || undefined, 
+                selectedGender || undefined,
+                selectedSubCategory || undefined
+              );
+              console.log('✅ Products updated via realtime');
+              setProducts(data || []);
+            } catch (err) {
+              console.error('❌ Realtime update failed:', err);
+            }
           }
-        }
-      )
-      .subscribe((status: string) => {
-        console.log('📡 Supabase subscription status:', status);
-      });
+        )
+        .subscribe((status: string) => {
+          console.log('📡 Supabase subscription status:', status);
+        });
+    };
+
+    setupSubscription();
 
     return () => {
       console.log('🔌 Cleaning up realtime subscription');
-      supabase.removeChannel(channel);
+      if (channel) {
+        supabase.removeChannel(channel);
+      }
     };
   }, [searchTerm, selectedCategory, selectedGender, selectedSubCategory]);
 

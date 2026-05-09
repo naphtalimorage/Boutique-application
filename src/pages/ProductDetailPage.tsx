@@ -42,30 +42,42 @@ export default function ProductDetailPage() {
     if (!id) return;
     
     const supabase = getSupabaseClient();
-    const channel = supabase
-      .channel(`product-updates-${id}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'products',
-          filter: `id=eq.${id}`
-        },
-        async (payload: any) => {
-          console.log('🔄 Product change detected via Realtime:', payload);
-          try {
-            const data = await productsAPI.getById(id);
-            setProduct(data);
-          } catch (err) {
-            console.error('❌ Failed to update product via Realtime:', err);
+    let channel: any;
+
+    const setupSubscription = () => {
+      channel = supabase
+        .channel(`product-updates-${id}`)
+        .on(
+          'postgres_changes',
+          {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'products',
+            filter: `id=eq.${id}`
+          },
+          async (payload: any) => {
+            console.log('🔄 Product change detected via Realtime:', payload);
+            try {
+              const data = await productsAPI.getById(id);
+              setProduct(data);
+            } catch (err) {
+              console.error('❌ Failed to update product via Realtime:', err);
+            }
           }
-        }
-      )
-      .subscribe();
+        )
+        .subscribe((status) => {
+          if (status === 'SUBSCRIBED') {
+            console.log('✅ Subscribed to product updates');
+          }
+        });
+    };
+
+    setupSubscription();
 
     return () => {
-      supabase.removeChannel(channel);
+      if (channel) {
+        supabase.removeChannel(channel);
+      }
     };
   }, [id]);
 
@@ -253,7 +265,7 @@ export default function ProductDetailPage() {
               {availableStock > 0 && availableStock <= 5 && (
                 <Badge className="bg-warning text-white text-xs sm:text-sm">⚡ Only {availableStock} left</Badge>
               )}
-              {availableStock === 0 && <Badge className="bg-muted0 text-xs sm:text-sm">SOLD OUT</Badge>}
+              {availableStock === 0 && <Badge variant="outline" className="text-xs sm:text-sm">SOLD OUT</Badge>}
             </div>
 
             {/* Title */}
