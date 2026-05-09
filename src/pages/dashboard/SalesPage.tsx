@@ -226,8 +226,7 @@ export default function SalesPage() {
 
     try {
       if (paymentMethod === 'cash') {
-        // Artificial delay for UX
-        await new Promise(resolve => setTimeout(resolve, 1200));
+        setCashStep('success');
       }
 
       await salesAPI.createMulti({
@@ -235,9 +234,13 @@ export default function SalesPage() {
         paymentMethod,
       });
 
-      if (paymentMethod === 'cash') {
-        setCashStep('success');
-      } else {
+      if (paymentMethod === 'mobile_money') {
+        success('STK push sent. Processing in background...');
+        setDialogOpen(false);
+        clearCart();
+        fetchData();
+        setSubmitting(false);
+      } else if (paymentMethod !== 'cash') {
         success('STK push sent.');
         setDialogOpen(false);
         clearCart();

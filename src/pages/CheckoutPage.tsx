@@ -49,6 +49,11 @@ export default function CheckoutPage() {
       const API_URL = import.meta.env.VITE_API_URL || 'https://boutique-application.onrender.com/api';
       const token = localStorage.getItem('token');
 
+      // Optimistic update for cash: show success immediately if it's cash
+      if (paymentMethod === 'cash') {
+        setCashStep('success');
+      }
+
       const response = await fetch(`${API_URL}/sales/multi`, {
         method: 'POST',
         headers: {
@@ -63,9 +68,7 @@ export default function CheckoutPage() {
         throw new Error(error.error || 'Failed to complete sale');
       }
 
-      if (paymentMethod === 'cash') {
-        setCashStep('success');
-      } else {
+      if (paymentMethod !== 'cash') {
         success('Sale completed successfully!');
         clearCart();
         
@@ -78,12 +81,25 @@ export default function CheckoutPage() {
       const message = err instanceof Error ? err.message : 'Failed to complete sale';
       showError(message);
       setSubmitting(false);
+      if (paymentMethod === 'cash') {
+        setCashStep('confirm');
+      }
     }
   };
 
   const handleMpesaSuccess = (data: { saleId: string; checkoutRequestID: string; mpesaReceiptNumber?: string }) => {
     setShowMpesaDialog(false);
-    handleCompleteSale(data);
+    
+    // If mpesaReceiptNumber is 'pending', it means user chose "Continue in Background"
+    if (data.mpesaReceiptNumber === 'pending') {
+      success('Payment processing in background. Sale will be confirmed soon!');
+      clearCart();
+      setTimeout(() => {
+        navigate('/dashboard/sales', { replace: true });
+      }, 500);
+    } else {
+      handleCompleteSale(data);
+    }
   };
 
   const handleMpesaError = (error: string) => {
@@ -95,9 +111,8 @@ export default function CheckoutPage() {
     setCashStep('processing');
     
     try {
-      // Artificial delay to show "Processing" state for UX
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      await handleCompleteSale();
+      // Complete sale immediately for better UX
+      handleCompleteSale();
     } catch (err) {
       setCashStep('confirm');
       setSubmitting(false);

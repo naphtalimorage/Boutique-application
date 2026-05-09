@@ -304,6 +304,29 @@ export default function MpesaPaymentDialog({
                   </div>
                 </div>
 
+                {/* Optimistic Update Option */}
+                <div className="pt-2">
+                  <Button
+                    variant="outline"
+                    className="w-full border-green-200 text-green-700 hover:bg-green-50"
+                    onClick={() => {
+                      // Call success but without mpesaData yet, or just navigate away
+                      // The backend already created the pending sale.
+                      // We tell the parent that we're "done" for now and it will be updated in background.
+                      onSuccess({
+                        saleId: '', // Parent handles redirection to sales page
+                        checkoutRequestID: '',
+                        mpesaReceiptNumber: 'pending'
+                      });
+                    }}
+                  >
+                    Continue in Background
+                  </Button>
+                  <p className="text-[10px] text-muted-foreground mt-2">
+                    You can continue browsing. Your sale will appear in history once payment is confirmed.
+                  </p>
+                </div>
+
                 {/* Security Notice */}
                 <div className="flex items-center gap-2 justify-center text-xs text-muted-foreground">
                   <Shield className="h-4 w-4 text-green-600" />
