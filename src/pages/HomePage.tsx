@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { productsAPI, categoriesAPI, subCategoriesAPI } from '@/services/api';
-import getSupabaseClient from '@/lib/supabase';
+import getSupabaseClient, { checkSupabaseConnection } from '@/lib/supabase';
 import type { Product, Category, SubCategory, Gender } from '@/types';
 import ProductCard from '@/components/ProductCard';
 import HeroCarousel from '@/components/HeroCarousel';
@@ -80,7 +80,14 @@ export default function HomePage() {
     console.log('🔗 Setting up realtime subscription for products...');
     let channel: any;
 
-    const setupSubscription = () => {
+    const setupSubscription = async () => {
+      // First check if Supabase is actually reachable
+      const isConnected = await checkSupabaseConnection();
+      if (!isConnected) {
+        console.warn('📡 Supabase is not reachable. Skipping Realtime subscription.');
+        return;
+      }
+
       channel = supabase
         .channel('products-changes')
         .on(

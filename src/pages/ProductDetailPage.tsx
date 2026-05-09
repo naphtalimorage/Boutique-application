@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { productsAPI } from '@/services/api';
-import getSupabaseClient from '@/lib/supabase';
+import getSupabaseClient, { checkSupabaseConnection } from '@/lib/supabase';
 import type { ColorVariation, Product, SizeVariation } from '@/types';
 import { useCart } from '@/hooks/useCart';
 import { useWishlist } from '@/context/WishlistContext';
@@ -44,7 +44,14 @@ export default function ProductDetailPage() {
     const supabase = getSupabaseClient();
     let channel: any;
 
-    const setupSubscription = () => {
+    const setupSubscription = async () => {
+      // First check if Supabase is actually reachable
+      const isConnected = await checkSupabaseConnection();
+      if (!isConnected) {
+        console.warn('📡 Supabase is not reachable. Skipping Realtime subscription for product updates.');
+        return;
+      }
+
       channel = supabase
         .channel(`product-updates-${id}`)
         .on(
