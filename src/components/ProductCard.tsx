@@ -22,13 +22,32 @@ export default function ProductCard({ product }: ProductCardProps) {
   const discount = product.id.charCodeAt(0) % 40 + 5;
   const originalPrice = Math.round(product.price * (1 + discount / 100));
   const hasDiscount = discount > 15;
-  const isLowStock = product.stock > 0 && product.stock <= 5;
-  const isNew = product.stock > 20;
+  const totalStock = useMemo(() => {
+    if (product.variations && product.variations.length > 0) {
+      return product.variations.reduce((sum, v) => {
+        const variationStock = Array.isArray(v.colors) && v.colors.length > 0
+          ? v.colors.reduce((s, c) => s + (c.stock || 0), 0)
+          : (v.stock || 0);
+        return sum + variationStock;
+      }, 0);
+    }
+    return product.stock || 0;
+  }, [product.variations, product.stock]);
+
+  const isLowStock = totalStock > 0 && totalStock <= 5;
+  const isNew = totalStock > 20;
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (product.stock > 0) {
+    
+    // If product has variations, navigate to detail page instead of adding directly
+    if (product.variations && product.variations.length > 0) {
+      navigate(`/product/${product.id}`);
+      return;
+    }
+
+    if (totalStock > 0) {
       addToCart(product);
       success(`${product.name} added to cart`);
     }
@@ -136,13 +155,13 @@ export default function ProductCard({ product }: ProductCardProps) {
             <div className="absolute bottom-2 left-2 right-2">
               <div className="bg-warning/90 text-white text-xs font-medium px-2 py-1 rounded flex items-center gap-1">
                 <Zap className="h-3 w-3" />
-                Only {product.stock} left!
+                Only {totalStock} left!
               </div>
             </div>
           )}
 
           {/* Out of Stock Overlay */}
-          {product.stock === 0 && (
+          {totalStock === 0 && (
             <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
               <span className="bg-white text-dark px-4 py-2 text-sm font-bold rounded">OUT OF STOCK</span>
             </div>
@@ -196,19 +215,24 @@ export default function ProductCard({ product }: ProductCardProps) {
         {/* Add to Cart Button - Mobile-friendly touch target */}
         <button
           onClick={handleAddToCart}
-          disabled={product.stock === 0}
+          disabled={totalStock === 0}
           className={`w-full mt-3 rounded-md text-sm font-medium transition-all duration-200 flex items-center justify-center gap-2 min-h-[44px] md:h-9 active:scale-[0.98] ${
-            product.stock === 0
+            totalStock === 0
               ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
               : isInCart(product.id)
               ? 'bg-success/10 text-success hover:bg-success/20 border border-success/30'
               : 'bg-primary text-white hover:bg-primary-dark'
           }`}
         >
-          {product.stock === 0 ? (
+          {totalStock === 0 ? (
             <span className="flex items-center gap-1">
               <ShoppingCart className="h-4 w-4" />
               Sold Out
+            </span>
+          ) : product.variations && product.variations.length > 0 ? (
+            <span className="flex items-center gap-1">
+              <Eye className="h-4 w-4" />
+              Select Options
             </span>
           ) : isInCart(product.id) ? (
             <span className="flex items-center gap-1">

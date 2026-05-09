@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { productsAPI } from '@/services/api';
+import getSupabaseClient from '@/lib/supabase';
 import type { ColorVariation, Product, SizeVariation } from '@/types';
 import { useCart } from '@/hooks/useCart';
 import { useWishlist } from '@/context/WishlistContext';
@@ -36,9 +37,41 @@ export default function ProductDetailPage() {
   const { isInWishlist, toggleWishlist } = useWishlist();
   const { success } = useToast();
 
+  // Real-time stock updates via Supabase
   useEffect(() => {
     if (!id) return;
-    const fetchProduct = async () => {
+    
+    const supabase = getSupabaseClient();
+    const channel = supabase
+      .channel(`product-updates-${id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'products',
+          filter: `id=eq.${id}`
+        },
+        async (payload: any) => {
+          console.log('🔄 Product change detected via Realtime:', payload);
+          try {
+            const data = await productsAPI.getById(id);
+            setProduct(data);
+          } catch (err) {
+            console.error('❌ Failed to update product via Realtime:', err);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [id]);
+
+  useEffect(() => {
+    if (!id) return;
+    const fetchProductAndRelated = async () => {
       try {
         const data = await productsAPI.getById(id);
         setProduct(data);
@@ -50,11 +83,11 @@ export default function ProductDetailPage() {
         setLoading(false);
       }
     };
-    fetchProduct();
+    fetchProductAndRelated();
     
     // Refresh data when window regains focus (e.g., after completing a sale)
     const handleFocus = () => {
-      fetchProduct();
+      fetchProductAndRelated();
     };
     
     window.addEventListener('focus', handleFocus);
@@ -152,7 +185,25 @@ export default function ProductDetailPage() {
   const selectedVariation = selectedSize
     ? product.variations?.find((variation) => variation.size === selectedSize)
     : undefined;
+  
+  // Real-time stock update effect to handle variation depletion
+  useEffect(() => {
+    if (selectedSize && selectedVariation) {
+      const stock = getVariationStock(selectedVariation);
+      if (stock === 0) {
+        setSelectedSize('');
+        setSelectedColor('');
+      } else if (selectedColor) {
+        const colorStock = selectedVariation.colors?.find(c => c.name === selectedColor)?.stock ?? 0;
+        if (colorStock === 0) {
+          setSelectedColor('');
+        }
+      }
+    }
+  }, [product.variations, selectedSize, selectedVariation, selectedColor]);
+
   const selectedColorOption = selectedVariation?.colors?.find((color) => color.name === selectedColor);
+
   const selectedVariationStock = selectedVariation ? getVariationStock(selectedVariation) : 0;
   const selectedColorStock = selectedColorOption?.stock ?? 0;
 
@@ -246,31 +297,34 @@ export default function ProductDetailPage() {
                   <span className="text-xs md:text-sm font-medium">Size: <span className="text-destructive">*</span></span>
                 </div>
                 <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2">
-                  {availableVariations.map((variation) => {
-                    const variationStock = getVariationStock(variation);
-                    return (
-                      <button
-                        key={variation.size}
-                        onClick={() => {
-                          setSelectedSize(variation.size);
-                          setSelectedColor(''); // Reset color when size changes
-                        }}
-                        disabled={variationStock === 0}
-                        className={`p-2 md:p-3 rounded-lg border-2 transition-all text-center min-h-[44px] ${
-                          selectedSize === variation.size
-                            ? 'border-primary bg-primary/5'
-                            : variationStock === 0
-                            ? 'border-muted bg-muted/50 cursor-not-allowed opacity-50'
-                            : 'border-border hover:border-primary/50'
-                        }`}
-                      >
-                        <div className="font-semibold text-xs md:text-sm">{variation.size}</div>
-                        <div className="text-xs text-muted-foreground mt-0.5 md:mt-1">
-                          {variationStock > 0 ? `${variationStock} left` : 'Sold out'}
-                        </div>
-                      </button>
-                    );
-                  })}
+                  {availableVariations.length > 0 ? (
+                    availableVariations.map((variation) => {
+                      const variationStock = getVariationStock(variation);
+                      return (
+                        <button
+                          key={variation.size}
+                          onClick={() => {
+                            setSelectedSize(variation.size);
+                            setSelectedColor(''); // Reset color when size changes
+                          }}
+                          className={`p-2 md:p-3 rounded-lg border-2 transition-all text-center min-h-[44px] ${
+                            selectedSize === variation.size
+                              ? 'border-primary bg-primary/5'
+                              : 'border-border hover:border-primary/50'
+                          }`}
+                        >
+                          <div className="font-semibold text-xs md:text-sm">{variation.size}</div>
+                          <div className="text-xs text-muted-foreground mt-0.5 md:mt-1">
+                            {variationStock} left
+                          </div>
+                        </button>
+                      );
+                    })
+                  ) : (
+                    <div className="col-span-full p-4 border-2 border-dashed rounded-lg text-center text-muted-foreground">
+                      No sizes available
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -289,18 +343,15 @@ export default function ProductDetailPage() {
                       <button
                         key={color.name}
                         onClick={() => setSelectedColor(color.name)}
-                        disabled={color.stock === 0}
                         className={`p-2 md:p-3 rounded-lg border-2 transition-all text-center min-h-[44px] ${
                           selectedColor === color.name
                             ? 'border-primary bg-primary/5'
-                            : color.stock === 0
-                            ? 'border-muted bg-muted/50 cursor-not-allowed opacity-50'
                             : 'border-border hover:border-primary/50'
                         }`}
                       >
                         <div className="font-semibold text-xs md:text-sm">{color.name}</div>
                         <div className="text-xs text-muted-foreground mt-0.5 md:mt-1">
-                          {color.stock > 0 ? `${color.stock} left` : 'Sold out'}
+                          {color.stock} left
                         </div>
                       </button>
                     )) || []}
